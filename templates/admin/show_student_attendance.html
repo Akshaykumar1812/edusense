@@ -1,0 +1,103 @@
+{% extends 'admin/admin_layout.html' %}
+{% load static %}
+{% block content %}
+
+<div class="main-panel">
+    <div class="content-wrapper">
+        <div class="row">
+
+            <div class="row justify-content-center">
+                <div class="col-md-6 grid-margin stretch-card">
+                    <div class="card">
+                        <div class="card-body">
+                            <h4 class="card-title text-center mb-4">Show Attendance</h4>
+                            <form class="forms-sample" method="POST" action="">
+                                {% csrf_token %}
+                                <div class="form-group">
+                                <label for="exampleInputPassword4">Department</label>
+                                <select name="department" class="form-control" onchange="this.form.submit()" required>
+                                    <option value="" disabled selected>--Select Department--</option>
+                                    {% for dept in departments %}
+                                    <option value="{{ dept.department_id }}" {% if selected_department and selected_department.department_id == dept.department_id %} selected {% endif %}>{{dept.department_name}}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                                <div class="form-group">
+                                    <label for="academic_year">Academic Year</label>
+                                    <select name="academic_year" class="form-control" required>
+                                        <option value="" disabled selected>--Select Academic Year--</option>
+                                        {% for year in academic_years %}
+                                        <option value="{{ year.academic_year }}">{{ year.academic_year }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label for="semester">Semester</label>
+                                    <select name="semester" class="form-control" required>
+                                        <option value="" disabled selected>--Select Semester--</option>
+                                        {% for sem in semesters %}
+                                        <option value="{{ sem.semester_id }}">Semester {{ sem.semester_number }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                                <div class="text-center mt-4">
+                                    <button type="submit" class="btn btn-primary me-2">Show</button>
+                                    <button type="reset" class="btn btn-light">Cancel</button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            {% if attendance_summaries %}
+            <div class="col-lg-12 grid-margin stretch-card">
+                <div class="card">
+                    <div class="card-body">
+                        <h4 class="card-title">Student Attendance Summary</h4>
+                        <strong>HOD :</strong> {{ hod_name }} <br>
+                        <p class="card-description">
+                            <strong></strong> {{ selected_department.department_name }} | 
+                            <strong></strong> {{ request.POST.academic_year }} | 
+                            <strong></strong> Sem {{ selected_semester_obj.semester_number }}
+                        </p>
+                        
+                        <div class="table-responsive">
+                            <table class="table table-striped">
+                                <thead>
+                                    <tr>
+                                        <th>Student Name</th>
+                                        <th>Total Classes</th>
+                                        <th>Attended Classes</th>
+                                        <th>Attendance %</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for summary in attendance_summaries %}
+                                    <tr>
+                                        <td>{{ summary.student.full_name }}</td>
+                                        <td>{{ summary.total_classes }}</td>
+                                        <td>{{ summary.attended_classes }}</td>
+                                        <td>
+                                            {% if summary.percentage >= 75 %}
+                                                <span class="badge badge-success">{{ summary.percentage|floatformat:2 }} %</span>
+                                            {% elif summary.percentage >= 60 %}
+                                                <span class="badge badge-warning">{{ summary.percentage|floatformat:2 }} %</span>
+                                            {% else %}
+                                                <span class="badge badge-danger">{{ summary.percentage|floatformat:2 }} %</span>
+                                            {% endif %}
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+        </div>
+    </div>
+
+    {% endblock %}

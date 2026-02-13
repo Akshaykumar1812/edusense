@@ -1,0 +1,146 @@
+{% load static %}
+<head>
+    <link href="{% static 'login/' %}css/style.css" rel="stylesheet">
+</head>
+<div class="container" id="container">
+	<div class="form-container sign-up-container">
+		<form action="{% url 'register' %}" method="POST">
+			{% csrf_token %}
+			<h1>Create Account</h1>
+			
+			<input type="text" name="fullname" placeholder="Full Name" pattern="[A-Za-z\s]+" title="The name must contain alphabets" required/>
+			<input type="email" name="email" placeholder="Email" required />
+			<input type="text" name="phone" placeholder="Phone Number" pattern="[1-9][0-9]{9}" maxlength="10" title="Phone number must be 10 digits and cannot be all zeros" required/>
+			<input type="password" name="password" placeholder="Password" required/>
+			<select name="dept" id="dept" required onchange="filterAcademicYears()">
+				<option value="" disabled selected>Department</option>
+				{% for i in department  %}
+				<option value="{{ i.department_id }}">{{ i.department_name }}</option>
+				{% endfor %}
+			</select>
+			<select name="role" id="role" required>
+				<option value="" disabled selected>Select Role</option>
+				<option value="student">Student</option>
+				<option value="faculty">Faculty</option>
+				<option value="hod">HOD</option>
+				<option value="attendanceofficer">Attendance Officer</option>
+			</select>
+			
+			<!-- Student-specific fields -->
+			<div id="student-fields" style="display: none;">
+				<select name="academic_year" id="academic_year" onchange="filterSemestersByYear()">
+					<option value="" disabled selected>Academic Year</option>
+					{% for year in academic_years %}
+					<option value="{{ year.academic_year }}" data-department="{{ year.fk_department_id }}">{{ year.academic_year }}</option>
+					{% endfor %}
+				</select>
+				<select name="semester" id="semester">
+					<option value="" disabled selected>Semester</option>
+					{% for semester in semesters %}
+					<option value="{{ semester.semester_id }}" data-department="{{ semester.fk_department_id }}">Sem {{ semester.semester_number }}</option>
+					{% endfor %}
+				</select>
+			</div>
+			<button>Register</button>
+		</form>
+	</div>
+	<div class="form-container sign-in-container" >
+		<form action="{% url 'check_login' %}"  method="POST">
+            {% csrf_token %}
+			<h1>Sign in</h1>
+			
+			<input type="text" name="username" placeholder="Email" />
+			<input type="password"  name="password" placeholder="Password" />
+			<a href="#">Forgot your password?</a>
+			<button>Login</button>
+		</form>
+	</div>
+	<div class="overlay-container">
+		<div class="overlay">
+			<div class="overlay-panel overlay-left">
+				<h1>Welcome EduSense</h1>
+				<p>To keep connected with us please login with your personal info</p>
+				<button class="ghost" id="signIn">Login</button>
+			</div>
+			<div class="overlay-panel overlay-right">
+				<h1>EduSense</h1>
+				<p>Enter your personal details and start journey with us</p>
+				<button class="ghost" id="signUp">Register</button>
+			</div>
+		</div>
+	</div>
+</div>
+
+<script src="{% static 'login/' %}js/style.js"></script>
+<script>
+const roleSelect = document.getElementById('role');
+const studentFields = document.getElementById('student-fields');
+const deptSelect = document.getElementById('dept');
+const semesterSelect = document.getElementById('semester');
+const academicYearSelect = document.getElementById('academic_year');
+
+roleSelect.addEventListener('change', function() {
+    if (this.value === 'student') {
+        studentFields.style.display = 'block';
+        // Filter academic years when student role is selected
+        filterAcademicYears();
+    } else {
+        studentFields.style.display = 'none';
+    }
+});
+
+function filterAcademicYears() {
+    const selectedDept = deptSelect.value;
+    const yearOptions = academicYearSelect.querySelectorAll('option');
+    
+    // Reset academic year selection
+    academicYearSelect.value = '';
+    
+    yearOptions.forEach(option => {
+        if (option.value === '') {
+            // Keep the default option
+            option.style.display = 'block';
+        } else {
+            // Show/hide based on department
+            const optionDept = option.getAttribute('data-department');
+            if (optionDept === selectedDept) {
+                option.style.display = 'block';
+            } else {
+                option.style.display = 'none';
+            }
+        }
+    });
+}
+
+function filterSemestersByYear() {
+    const selectedDept = deptSelect.value;
+    const semesterOptions = semesterSelect.querySelectorAll('option');
+    
+    // Reset semester selection
+    semesterSelect.value = '';
+    
+    semesterOptions.forEach(option => {
+        if (option.value === '') {
+            // Keep the default option
+            option.style.display = 'block';
+        } else {
+            // Show/hide based on department
+            const optionDept = option.getAttribute('data-department');
+            if (optionDept === selectedDept) {
+                option.style.display = 'block';
+            } else {
+                option.style.display = 'none';
+            }
+        }
+    });
+}
+</script>
+
+<footer>
+	<p>
+		Created with <i class="fa fa-heart"></i> by
+		<a target="_blank" href="https://florin-pop.com">Florin Pop</a>
+		- Read how I created this and how you can join the challenge
+		<a target="_blank" href="https://www.florin-pop.com/blog/2019/03/double-slider-sign-in-up-form/">here</a>.
+	</p>
+</footer>

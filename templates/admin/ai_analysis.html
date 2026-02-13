@@ -1,0 +1,82 @@
+{% extends 'admin/admin_layout.html' %}
+{% load static %}
+{% block content %}
+
+<div class="main-panel">
+    <div class="content-wrapper">
+        <div class="row">
+
+            <div class="row justify-content-center">
+                <div class="col-md-6 grid-margin stretch-card">
+                    <div class="card">
+                        <div class="card-body">
+                            <h4 class="card-title">AI Analysis</h4>
+                            <div class="row mb-3">
+                                <div class="col-md-6">
+                                    <strong>Leave ID:</strong>
+                                    <span class="badge bg-dark">{{ leave.leave_id }}</span>
+                                </div>
+                                <div class="col-md-6">
+                                    <strong>Applicant Name:</strong>
+                                    <span class="text-primary">{{ user.full_name }}</span>
+                                </div>
+                            </div>
+                            <hr>
+
+                            <div class="row mb-2">
+                                <div class="col-md-6">
+                                    <strong>Attendance Percentage:</strong>
+                                </div>
+                                <div class="col-md-6">
+                                    <span class="badge bg-success">85%</span>
+                                </div>
+                            </div>
+                            <div class="row mb-2">
+                                <div class="col-md-6">
+                                    <strong>Past Leave Count:</strong>
+                                </div>
+                                <div class="col-md-6">
+                                    <span class="badge bg-info">4</span>
+                                </div>
+                            </div>
+
+                            <div class="row mb-2">
+                                <div class="col-md-6">
+                                    <strong>Sentiment Score:</strong>
+                                </div>
+                                <div class="col-md-6">
+                                    <span class="badge bg-warning text-dark">Neutral</span>
+                                </div>
+                            </div>
+                            
+
+                            <div class="row mb-3">
+                                <div class="col-md-6">
+                                    <strong>Academic Risk:</strong>
+                                </div>
+                                <div class="col-md-6">
+                                    <span class="badge bg-danger">Low</span>
+                                </div>
+                            </div>
+                            <hr>
+
+                            <div class="col-md-6">
+                                    <strong>AI Recommendation : </strong>
+                                    <span class="text-primary"></span>
+                                </div>
+
+                            <div class="mb-3">
+                                <strong>Approval Availability :</strong>
+                                <span class="badge bg-success"></span>
+                            </div>
+                            <a href="{% url 'reason' leave.leave_id %}" class="btn btn-primary me-2 ">Proceed To Decision</a>
+                            <a href="{% url 'leave_request' %}" class="btn btn-danger me-2 ">Back</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    {% endblock %}

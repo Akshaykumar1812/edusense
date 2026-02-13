@@ -1,0 +1,64 @@
+{% extends 'hod/hod_layout.html' %}
+{% load static %}
+{% block content %}
+
+<div class="main-panel">
+    <div class="content-wrapper">
+        <div class="row">
+
+            <div class="row justify-content-center">
+                <div class="col-md-6 grid-margin stretch-card">
+                    <div class="card">
+                        <div class="card-body">
+                            <h4 class="card-title text-center mb-4">Assign Subject</h4>
+                            <form class="forms-sample" method="POST" action="{% url 'add_assign_subject' %}">
+                                {% csrf_token %}
+                                <div class="form-group">
+                                    <label for="exampleInputPassword4">Subject Name</label>
+                                    <input type="text" name="subject_name" class="form-control" id="exampleInputPassword4" 
+                                    placeholder="Name of Subject" value="{{ request.POST.subject_name }}" required>
+                                </div>
+                                <div class="form-group">
+                                    <label for="exampleInputPassword4">Department</label>
+                                    <select name="department" class="form-control" onchange="this.form.submit()" required>
+                                        <option value="" disabled selected>--Select Department--</option>
+                                        {% for dept in department %}
+                                            <option value="{{ dept.department_id }}"
+                                            {% if selected_department == dept.department_id %}selected{% endif %}>{{ dept.department_name }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label for="exampleInputPassword4">Semester</label>
+                                    <select name="semester" class="form-control" required>
+                                        <option value="" disabled selected>--Select Semester--</option>
+                                        {% for sem in semesters %}
+                                            <option value="{{ sem.semester_id }}">{{ sem.semester_number }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label for="exampleInputPassword4">Assign Faculty</label>
+                                    <select name="assign_faculty" class="form-control" required>
+                                        <option value="" disabled selected>--Select Faculty--</option>
+                                        {% for i in faculty %}
+                                        <option value="{{ i.user_id }}" {% if request.POST.assign_faculty == i.user_id %}selected{% endif %}>
+                                            {{ i.full_name }}
+                                        </option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                                <div class="text-center mt-4">
+                                <button type="submit" class="btn btn-primary me-2">Add</button>
+                                <button type="reset" class="btn btn-light">Cancel</button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    {% endblock %}

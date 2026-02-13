@@ -1,0 +1,49 @@
+{% extends 'admin/admin_layout.html' %}
+{% load static %}
+{% block content %}
+
+<div class="main-panel">
+    <div class="content-wrapper">
+        <div class="row">
+            <h4 class="card-title">Leave Request</h4><br>
+
+            </p>
+            <div class="table-responsive">
+                <table class="table table-bordered table-striped table-hover text-center">
+                    <thead>
+                        <tr>
+                            <th>Applicant Name</th>
+                            <th>Department</th>
+                            <th>Types</th>
+                            <th>Dates</th>
+                            <th>Reason</th>
+                            <th>Status</th>
+                            <th>Action</th>
+
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for i in data %}
+
+                        <tr>
+                            <td>{{ i.user.full_name }}</td>
+                            <td>{{ i.department.department_name }}</td>
+                            <td>{{ i.leave.leave_type }}</td>
+                            <td>{{ i.leave.start_date }} to {{ i.leave.end_date }}</td>
+                            <td>{{ i.leave.reason }}</td>
+                            <td>{{ i.leave.status }}</td>
+                            <td>
+                                <a href="{% url 'ai_analysis' i.leave.leave_id %}" class="btn btn-primary me-2 ">AI Analysis</a>
+                                <a href="{% url 'delete_leave' i.leave.leave_id %}" class="btn btn-danger me-2 ">Delete</a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+
+        </div>
+    </div>
+
+    {% endblock %}

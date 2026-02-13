@@ -1,0 +1,67 @@
+{% extends 'hod/hod_layout.html' %}
+{% load static %}
+{% block content %}
+
+<div class="main-panel">
+    <div class="content-wrapper">
+        <div class="row">
+
+            <div class="row justify-content-center">
+                <div class="col-md-6 grid-margin stretch-card">
+                    <div class="card">
+                        <div class="card-body">
+                            <h4 class="card-title text-center mb-4">Assign Subject</h4>
+                            <form class="forms-sample" method="POST" action="{% url 'edit_assign_subject' subject.subject_id %}">
+                                {% csrf_token %}
+                                <div class="form-group">
+                                    <label for="exampleInputPassword4">Subject Name</label>
+                                    <input type="text" name="subject_name" class="form-control" 
+                                    id="exampleInputPassword4"  value="{{ subject.subject_name }}">
+                                </div>
+                                <div class="form-group">
+                                    <label for="exampleInputPassword4">Department</label>
+                                    <select name="department" class="form-control">
+                                        <option value="{{ sub_department.department_id }}" selected>{{ sub_department.department_name }}</option>
+                                        <!-- {% for dept in department %}
+                                            {% if dept.department_id != sub_department.department_id %}
+                                                <option value="{{ dept.department_id }}">{{ dept.department_name }}</option>
+                                            {% endif %}
+                                        {% endfor %} -->
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label for="exampleInputPassword4">Semester</label>
+                                    <select name="semester" class="form-control">
+                                        <option value="{{ sub_semester.semester_id }}" selected>Semester {{ sub_semester.semester_number }}</option>
+                                        {% for sem in semesters %}
+                                            {% if sem.semester_id != sub_semester.semester_id %}
+                                                <option value="{{ sem.semester_id }}">Semester {{ sem.semester_number }}</option>
+                                            {% endif %}
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label for="exampleInputPassword4">Assign Faculty</label>
+                                    <select name="assign_faculty" class="form-control">
+                                        <option value="{{ sub_faculty.user_id }}" selected>{{ sub_faculty.full_name }}</option>
+                                        {% for f in faculty %}
+                                            {% if f.user_id != sub_faculty.user_id %}
+                                                <option value="{{ f.user_id }}">{{ f.full_name }}</option>
+                                            {% endif %}
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                                <div class="text-center mt-4">
+                                <button  type="submit" class="btn btn-primary me-2">Update</button>
+                                <button type="reset" class="btn btn-light">Cancel</button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    {% endblock %}

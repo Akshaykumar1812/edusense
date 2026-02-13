@@ -1,0 +1,88 @@
+{% extends 'faculty/faculty_layout.html' %}
+{% load static %}
+{% block content %}
+
+<div class="main-panel">
+    <div class="content-wrapper">
+        <div class="row">
+            <!-- form div -->
+            <div class="row justify-content-center">
+                <div class="col-md-6 grid-margin stretch-card">
+                    <div class="card">
+                        <div class="card-body">
+                            <h4 class="card-title text-center mb-4">Subjects</h4>
+                            <form class="forms-sample" method="POST" action="">
+                                {% csrf_token %}
+                                <div class="form-group">
+                                    <label for="exampleInputPassword4">Department</label>
+                                    <select name="department" class="form-control" onchange="this.form.submit()" required>
+                                        <option value="" disabled selected>--Select Department--</option>
+                                        {% for dept in department %}
+                                        <option value="{{ dept.department_id }}" {% if selected_department == dept.department_id %} selected {% endif %} >{{dept.department_name }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label for="exampleInputPassword4">Semester</label>
+                                    <select name="semester" class="form-control" required>
+                                        <option value="" disabled selected>--Select Semester--</option>
+                                        {% for sem in semesters %}
+                                        <option value="{{ sem.semester_id }}" {% if selected_semester == sem.semester_id %} selected {% endif %}>
+                                         {{ sem.semester_number }}
+                                        </option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                                <div class="text-center mt-4">
+                                    <button type="submit" class="btn btn-primary me-2">Show</button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <!-- end form div -->
+
+
+            <!-- table div -->
+             {% if show_table %}
+            <div class="row justify-content-center">
+                <div class="col-md-6 grid-margin stretch-card">
+                    <div class="card">
+                        <div class="card-body">
+                            
+                            <h4 class="card-title">Courses List</h4>
+
+                <div class="table-responsive">
+                    <table class="table table-striped table-bordered text-center">
+                        <thead>
+                            <tr>
+                                <th>SL No.</th>
+                                <th>Subject Name</th>
+                               
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for sub in subjects %}
+                            <tr>
+                                <td>{{ forloop.counter }}</td>
+                                <td>{{ sub.subject_name }}</td>
+                        
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+            <!-- tale div -->
+
+
+        </div>
+    </div>
+
+    {% endblock %}

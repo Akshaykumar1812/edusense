@@ -1,0 +1,41 @@
+{% extends 'admin/admin_layout.html' %}
+{% load static %}
+{% block content %}
+
+<div class="main-panel">
+    <div class="content-wrapper">
+        <div class="row">
+
+            <div class="row justify-content-center">
+                <div class="col-md-6 grid-margin stretch-card">
+                    <div class="card">
+                        <div class="card-body">
+                            <h4 class="card-title text-center mb-4">Update Department</h4>
+
+                            <form class="forms-sample" method="post"
+                                action="{% url 'edit_department' department.department_id %}">
+                                {% csrf_token %}
+                                <div class="form-group row">
+                                    <label for="exampleInputUsername2" class="col-sm-3 col-form-label">Department
+                                        Name</label>
+                                    <div class="col-sm-9">
+                                        <input type="text" name="dept_name" value="{{ department.department_name }}"
+                                            class="form-control" id="exampleInputUsername2"
+                                            placeholder="Department Name">
+                                    </div>
+                                </div>
+                                <div class="text-center mt-4">
+                                    <button type="submit" class="btn btn-primary me-2">Update</button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+    <!-- content-wrapper ends -->
+
+
+    {% endblock %}

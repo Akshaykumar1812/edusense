@@ -1,0 +1,48 @@
+{% extends 'hod/hod_layout.html' %}
+{% load static %}
+{% block content %}
+
+<div class="main-panel">
+    <div class="content-wrapper">
+        <div class="row">
+            <h4 class="card-title">Assigned Subject-Faculty</h4><br><br><br>
+
+            <div class="row">
+                <div class="col-md-6">
+                    <a href="{% url 'add_assign_subject' %}" class="btn btn-success float-end mb-3">Add Assigned Subject</a>
+                </div>
+            </div>
+            <div class="table-responsive">
+                <table class="table table-bordered table-striped text-center">
+                    <thead>
+                        <tr>
+                            <th>Department</th>
+                            <th>Subject Name</th>
+                            <th>Semester</th>
+                            <th>Assigned Faculty</th>
+                            <th>Action</th>
+
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for i in data %}
+                        <tr>
+                            <td>{{ i.department.department_name }}</td>
+                            <td>{{ i.subject.subject_name }}</td>
+                            <td>{{ i.semester.semester_number }}</td>
+                            <td>{{ i.faculty.full_name }}</td>
+                            <td>
+                                <a href="{% url 'edit_assign_subject' i.subject.subject_id %}" class="btn btn-primary me-2 ">Edit</a>
+                                <a href="{% url 'delete_assign_subject' i.subject.subject_id %}" class="btn btn-danger me-2 ">Delete</a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+
+        </div>
+    </div>
+
+    {% endblock %}

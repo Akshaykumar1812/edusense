@@ -1,0 +1,41 @@
+{% extends 'student/student_layout.html' %}
+{% load static %}
+{% block content %}
+
+<div class="main-panel">
+    <div class="content-wrapper">
+        <div class="row">
+            <h4 class="card-title">Leave Status</h4><br>
+                  
+                  </p>
+                  <div class="table-responsive">
+                            <table class="table table-bordered table-striped table-hover text-center" >
+                                <thead>
+                                    <tr>
+                                        <th>Applied On</th>
+                                        <th>Type</th>
+                                        <th>Dates</th>
+                                        <th>Reason</th>
+                                        <th>Status</th>
+                                        
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for i in leaves %}
+                                    <tr>
+                                        <td>{{ i.applied_on }}</td>
+                                        <td>{{ i.leave_type }}</td>
+                                        <td>{{ i.start_date }} to {{ i.end_date }}</td>
+                                        <td>{{ i.reason }}</td>
+                                        <td><button  class="btn btn-success me-2 ">{{ i.status }}</button></td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+            
+
+        </div>
+    </div>
+
+    {% endblock %}
