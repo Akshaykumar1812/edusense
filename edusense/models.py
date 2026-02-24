@@ -113,6 +113,18 @@ class AuthUserUserPermissions(models.Model):
         unique_together = (('user', 'permission'),)
 
 
+class Batches(models.Model):
+    batch_id = models.AutoField(primary_key=True)
+    batch_name = models.CharField(max_length=50)
+    fk_department_id = models.IntegerField()
+    fk_academic_id = models.IntegerField()
+    status = models.CharField(max_length=20)
+
+    class Meta:
+        managed = False
+        db_table = 'batches'
+
+
 class Classes(models.Model):
     class_id = models.AutoField(primary_key=True)
     class_name = models.CharField(max_length=50)
@@ -264,6 +276,7 @@ class MlModels(models.Model):
 class Semesters(models.Model):
     semester_id = models.AutoField(primary_key=True)
     fk_department_id = models.IntegerField()
+    fk_batch_id = models.IntegerField()
     status = models.CharField(max_length=50)
     semester_number = models.IntegerField()
 
@@ -276,12 +289,29 @@ class Subjects(models.Model):
     subject_id = models.AutoField(primary_key=True)
     subject_name = models.CharField(max_length=50)
     fk_department_id = models.IntegerField()
+    fk_batch_id = models.IntegerField()
     fk_faculty_id = models.IntegerField()
     fk_semester_id = models.IntegerField()
 
     class Meta:
         managed = False
         db_table = 'subjects'
+
+
+class Timetable(models.Model):
+    timetable_id = models.AutoField(primary_key=True)
+    fk_department_id = models.IntegerField()
+    fk_semester_id = models.IntegerField()
+    fk_subject_id = models.IntegerField()
+    fk_faculty_id = models.IntegerField()
+    day_of_week = models.CharField(max_length=20)
+    hours = models.IntegerField()
+    created_at = models.DateTimeField()
+    fk_batch_id = models.IntegerField()
+
+    class Meta:
+        managed = False
+        db_table = 'timetable'
 
 
 class Users(models.Model):

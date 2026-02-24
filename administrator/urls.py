@@ -26,6 +26,10 @@ urlpatterns = [
 
     path('show_student_attendance/', views.show_student_attendance, name='show_student_attendance'),
 
+    path('batch_management/',views.batch_management,name="batch_management"),
+    path('delete_batch/<int:batch_id>/', views.delete_batch, name='delete_batch'),
+    path('edit_batch/<int:batch_id>/',views.edit_batch,name="edit_batch"),
+
 
     
 

@@ -106,19 +106,36 @@ def reason(request, leave_id):
 def semester(request):
     semesters = models.Semesters.objects.all()
     departments = models.Departments.objects.all()
+    batches = models.Batches.objects.values('batch_name').distinct()
     data = []
     for semester in semesters:
-        department = models.Departments.objects.get(department_id=semester.fk_department_id)
-        data.append({'semester': semester,'department': department})
-
-    return render(request,'admin/semester.html',{'data': data,'departments': departments})
+        try:
+            department = models.Departments.objects.get(department_id=semester.fk_department_id)
+            batch = models.Batches.objects.get(batch_id=semester.fk_batch_id) if semester.fk_batch_id else None
+            data.append({'semester': semester,'department': department,'batch': batch})
+        except models.Departments.DoesNotExist:
+            data.append({'semester': semester,'department': None,'batch': batch})
+        except models.Batches.DoesNotExist:
+            data.append({'semester': semester,'department': department,'batch': None})
+    return render(request,'admin/semester.html',{'data': data,'departments': departments,'batches': batches})
 
 def add_semester(request):
     if request.method == "POST":
         semester = request.POST['semester']
         department_id = request.POST['department']
+        batch_name = request.POST.get('batch')
         status = "Active"
-        sem_info = models.Semesters(semester_number=semester,fk_department_id=department_id,status=status)
+        
+        if batch_name:
+            # Find batch by name
+            batch_obj = models.Batches.objects.filter(batch_name=batch_name).first()
+            if batch_obj:
+                sem_info = models.Semesters(semester_number=semester,fk_department_id=department_id,fk_batch_id=batch_obj.batch_id,status=status)
+            else:
+                sem_info = models.Semesters(semester_number=semester,fk_department_id=department_id,status=status)
+        else:
+            sem_info = models.Semesters(semester_number=semester,fk_department_id=department_id,status=status)
+        
         sem_info.save()
         return redirect('semester')
     
@@ -130,20 +147,32 @@ def delete_semester(request, semester_id):
 def edit_semester(request,semester_id):
     semester = models.Semesters.objects.get(semester_id=semester_id)
     department = models.Departments.objects.all()
+    batches = models.Batches.objects.all()
+    
     if request.method == "POST":
         semester.semester_number = request.POST['semester']
         semester.fk_department_id = request.POST['department']
+        
+        batch_id = request.POST.get('batch')
+        if batch_id:
+            semester.fk_batch_id = int(batch_id)
+        else:
+            semester.fk_batch_id = None
+            
         semester.save()
         
-    sem_department = models.Departments.objects.get(department_id=semester.fk_department_id)
+    try:
+        sem_department = models.Departments.objects.get(department_id=semester.fk_department_id)
+    except models.Departments.DoesNotExist:
+        sem_department = None
     
-    return render(request, 'admin/edit_semester.html', {'semester': semester,'sem_department': sem_department,'department': department})
+    return render(request, 'admin/edit_semester.html', {'semester': semester,'sem_department': sem_department,'department': department,'batches': batches})
 
 
 
 def academic_year(request):
     departments = models.Departments.objects.all()
-
+    
     selected_department = None
     semesters = []
 
@@ -170,14 +199,21 @@ def academic_year(request):
         
     data = []
     for ay in models.AcademicYears.objects.all():
-        department = models.Departments.objects.get(department_id=ay.fk_department_id)
-        semester = models.Semesters.objects.get(semester_id=ay.fk_semester_id)
-        data.append({
-            'academic': ay,
-            'department': department,
-            'semester': semester
-        })
-
+        try:
+            department = models.Departments.objects.get(department_id=ay.fk_department_id)
+            semester = models.Semesters.objects.get(semester_id=ay.fk_semester_id)
+            data.append({
+                'academic': ay,
+                'department': department,
+                'semester': semester
+            })
+        except (models.Departments.DoesNotExist, models.Semesters.DoesNotExist):
+            # Handle academic years with deleted departments or semesters
+            data.append({
+                'academic': ay,
+                'department': None,
+                'semester': None
+            })
 
     return render(request,'admin/academic_year.html',{'department': departments,'semesters': semesters,'selected_department': selected_department,'data': data})
 
@@ -243,3 +279,130 @@ def show_student_attendance(request):
         'hod_name': hod_name
     }
     return render(request, 'admin/show_student_attendance.html', context)
+
+def batch_management(request):
+    departments = models.Departments.objects.all()
+    
+    selected_department = None
+    academic_years = None
+    batch_name_value = None
+    
+    if request.method == "POST":
+        batch_name = request.POST.get('batch_name')
+        department_id = request.POST.get('department')
+        academic_id = request.POST.get('academic_year')
+        
+        if batch_name and department_id and academic_id:
+            # Create new batch - find academic_id from academic_year
+            academic_year_obj = models.AcademicYears.objects.filter(
+                academic_year=academic_id,
+                fk_department_id=int(department_id)
+            ).first()
+            
+            if academic_year_obj:
+                batch = models.Batches(
+                    batch_name=batch_name,
+                    fk_department_id=int(department_id),
+                    fk_academic_id=academic_year_obj.academic_id,
+                    status='Active'
+                )
+                batch.save()
+                return redirect('batch_management')
+        elif department_id:
+            # Filter academic years based on selected department - show unique years only
+            selected_department = int(department_id)
+            academic_years = models.AcademicYears.objects.filter(
+                fk_department_id=selected_department
+            ).values('academic_year', 'fk_department_id').distinct()
+            # Preserve batch name from form
+            batch_name_value = batch_name if batch_name else ""
+    
+    # Get all batches with their related department and academic year info
+    data = []
+    for batch in models.Batches.objects.all():
+        try:
+            department = models.Departments.objects.get(department_id=batch.fk_department_id)
+            academic_year = models.AcademicYears.objects.get(academic_id=batch.fk_academic_id)
+            data.append({
+                'batch': batch,
+                'department': department,
+                'academic': academic_year
+            })
+        except (models.Departments.DoesNotExist, models.AcademicYears.DoesNotExist):
+            # Handle orphaned records
+            data.append({
+                'batch': batch,
+                'department': None,
+                'academic': None
+            })
+    
+    context = {
+        'departments': departments,
+        'selected_department': selected_department,
+        'academic_years': academic_years,
+        'data': data,
+        'batch_name_value': batch_name_value
+    }
+    return render(request, 'admin/batch_management.html', context)
+
+def delete_batch(request, batch_id):
+    batch = models.Batches.objects.get(batch_id=batch_id)
+    batch.delete()
+    return redirect('batch_management')
+
+
+def edit_batch(request, batch_id):
+    batch = models.Batches.objects.get(batch_id=batch_id)
+    departments = models.Departments.objects.all()
+    
+    selected_department = None
+    academic_years = None
+    
+    if request.method == "POST":
+        batch_name = request.POST.get('batch_name')
+        department_id = request.POST.get('department')
+        academic_year = request.POST.get('academic_year')
+        
+        if batch_name and department_id and academic_year:
+            # Find academic_id from academic_year
+            academic_year_obj = models.AcademicYears.objects.filter(
+                academic_year=academic_year,
+                fk_department_id=int(department_id)
+            ).first()
+            
+            if academic_year_obj:
+                batch.batch_name = batch_name
+                batch.fk_department_id = int(department_id)
+                batch.fk_academic_id = academic_year_obj.academic_id
+                batch.save()
+                return redirect('batch_management')
+        elif department_id:
+            # Filter academic years based on selected department
+            selected_department = int(department_id)
+            academic_years = models.AcademicYears.objects.filter(
+                fk_department_id=selected_department
+            ).values('academic_year', 'fk_department_id').distinct()
+    else:
+        # For GET request, set current values
+        selected_department = batch.fk_department_id
+        academic_years = models.AcademicYears.objects.filter(
+            fk_department_id=selected_department
+        ).values('academic_year', 'fk_department_id').distinct()
+    
+    # Get current department and academic year for display
+    try:
+        current_department = models.Departments.objects.get(department_id=batch.fk_department_id)
+        current_academic = models.AcademicYears.objects.get(academic_id=batch.fk_academic_id)
+    except (models.Departments.DoesNotExist, models.AcademicYears.DoesNotExist):
+        current_department = None
+        current_academic = None
+    
+    context = {
+        'batch': batch,
+        'departments': departments,
+        'selected_department': selected_department,
+        'academic_years': academic_years,
+        'current_department': current_department,
+        'current_academic': current_academic
+    }
+    return render(request, 'admin/edit_batch.html', context)
