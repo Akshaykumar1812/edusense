@@ -1,9 +1,14 @@
 from django.shortcuts import render,redirect
+from django.contrib.auth import logout
 from edusense import models
 from datetime import datetime
 
 def student(request):
     return render(request,'student/student.html')
+
+def logout_view_student(request):
+    logout(request)
+    return redirect('login')
 
 def change_password_std(request):
     return render(request,'student/change_password_std.html')
