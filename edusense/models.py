@@ -11,8 +11,7 @@ from django.db import models
 class AcademicYears(models.Model):
     academic_id = models.AutoField(primary_key=True)
     academic_year = models.CharField(max_length=30)
-    fk_department_id = models.IntegerField()
-    fk_semester_id = models.IntegerField()
+    fk_batch_id = models.IntegerField()
 
     class Meta:
         managed = False
@@ -117,7 +116,6 @@ class Batches(models.Model):
     batch_id = models.AutoField(primary_key=True)
     batch_name = models.CharField(max_length=50)
     fk_department_id = models.IntegerField()
-    fk_academic_id = models.IntegerField()
     status = models.CharField(max_length=20)
 
     class Meta:
@@ -275,8 +273,7 @@ class MlModels(models.Model):
 
 class Semesters(models.Model):
     semester_id = models.AutoField(primary_key=True)
-    fk_department_id = models.IntegerField()
-    fk_batch_id = models.IntegerField()
+    fk_academic_id = models.IntegerField()
     status = models.CharField(max_length=50)
     semester_number = models.IntegerField()
 
@@ -323,6 +320,7 @@ class Users(models.Model):
     fk_department_id = models.IntegerField()
     status = models.CharField(max_length=50)
     created_at = models.DateField()
+    fk_batch_id = models.IntegerField()
     fk_academic_id = models.IntegerField()
     fk_semester_id = models.IntegerField()
 

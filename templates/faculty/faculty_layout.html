@@ -25,27 +25,36 @@
   <link rel="stylesheet" href="{% static 'admin/' %}assets/css/style.css">
   <!-- endinject -->
   <link rel="shortcut icon" href="{% static 'admin/' %}assets/images/favicon.png" />
-
+  
   <!-- Custom CSS for fixed sidebar -->
   <style>
     .sidebar {
       position: fixed !important;
       top: 60px !important;
       left: 0 !important;
-      width: 250px !important;
+      width: 235px !important;
       height: calc(100vh - 60px) !important;
       overflow-y: auto !important;
       z-index: 1000 !important;
     }
     
     .page-body-wrapper {
-      margin-left: 250px !important;
+      margin-left: 235px !important;
+    }
+    
+    /* Allow sidebar-icon-only to work */
+    body.sidebar-icon-only .sidebar {
+      width: 70px !important;
+    }
+    
+    body.sidebar-icon-only .page-body-wrapper {
+      margin-left: 70px !important;
     }
     
     @media (max-width: 991px) {
       .sidebar {
         position: fixed !important;
-        left: -250px !important;
+        left: -235px !important;
         right: auto !important;
       }
       
@@ -58,8 +67,6 @@
       }
     }
   </style>
-
-
 </head>
 
 <body>
@@ -164,121 +171,18 @@
       <nav class="sidebar sidebar-offcanvas" id="sidebar">
         <ul class="nav">
           <li class="nav-item">
-            <a class="nav-link" href="index.html">
+            <a class="nav-link" href="{% url 'admin' %}">
               <i class="icon-grid menu-icon"></i>
               <span class="menu-title">Dashboard</span>
             </a>
           </li>
-          <!-- <li class="nav-item">
-      <a class="nav-link" data-bs-toggle="collapse" href="#ui-basic" aria-expanded="false" aria-controls="ui-basic">
-        <i class="icon-layout menu-icon"></i>
-        <span class="menu-title">UI Elements</span>
-        <i class="menu-arrow"></i>
-      </a>
-      <div class="collapse" id="ui-basic">
-        <ul class="nav flex-column sub-menu">
-          <li class="nav-item"> <a class="nav-link" href="{% static 'admin/' %}pages/ui-features/buttons.html">Buttons</a></li>
-          <li class="nav-item"> <a class="nav-link" href="{% static 'admin/' %}pages/ui-features/dropdowns.html">Dropdowns</a></li>
-          <li class="nav-item"> <a class="nav-link" href="{% static 'admin/' %}pages/ui-features/typography.html">Typography</a></li>
-        </ul>
-      </div>
-    </li> -->
-          <li class="nav-item">
-            <a class="nav-link" data-bs-toggle="collapse" href="#form-elements" aria-expanded="false"
-              aria-controls="form-elements">
-              <i class="icon-columns menu-icon"></i>
-              <span class="menu-title">Form elements</span>
-              <i class="menu-arrow"></i>
-            </a>
-            <div class="collapse" id="form-elements">
-              <ul class="nav flex-column sub-menu">
-                <li class="nav-item"><a class="nav-link"
-                    href="{% static 'admin/' %}pages/forms/basic_elements.html">Basic Elements</a></li>
-              </ul>
-            </div>
-          </li>
-          <li class="nav-item">
-            <a class="nav-link" data-bs-toggle="collapse" href="#charts" aria-expanded="false" aria-controls="charts">
-              <i class="icon-bar-graph menu-icon"></i>
-              <span class="menu-title">Charts</span>
-              <i class="menu-arrow"></i>
-            </a>
-            <div class="collapse" id="charts">
-              <ul class="nav flex-column sub-menu">
-                <li class="nav-item"> <a class="nav-link"
-                    href="{% static 'admin/' %}pages/charts/chartjs.html">ChartJs</a></li>
-              </ul>
-            </div>
-          </li>
-          <li class="nav-item">
-            <a class="nav-link" data-bs-toggle="collapse" href="#tables" aria-expanded="false" aria-controls="tables">
-              <i class="icon-grid-2 menu-icon"></i>
-              <span class="menu-title">Tables</span>
-              <i class="menu-arrow"></i>
-            </a>
-            <div class="collapse" id="tables">
-              <ul class="nav flex-column sub-menu">
-                <li class="nav-item"> <a class="nav-link"
-                    href="{% static 'admin/' %}pages/tables/basic-table.html">Basic table</a></li>
-              </ul>
-            </div>
-          </li>
-          <li class="nav-item">
-            <a class="nav-link" data-bs-toggle="collapse" href="#icons" aria-expanded="false" aria-controls="icons">
-              <i class="icon-contract menu-icon"></i>
-              <span class="menu-title">Icons</span>
-              <i class="menu-arrow"></i>
-            </a>
-            <div class="collapse" id="icons">
-              <ul class="nav flex-column sub-menu">
-                <li class="nav-item"> <a class="nav-link" href="{% static 'admin/' %}pages/icons/mdi.html">Mdi icons</a>
-                </li>
-              </ul>
-            </div>
-          </li>
-          <li class="nav-item">
-            <a class="nav-link" data-bs-toggle="collapse" href="#auth" aria-expanded="false" aria-controls="auth">
-              <i class="icon-head menu-icon"></i>
-              <span class="menu-title">User Pages</span>
-              <i class="menu-arrow"></i>
-            </a>
-            <div class="collapse" id="auth">
-              <ul class="nav flex-column sub-menu">
-                <li class="nav-item"> <a class="nav-link" href="{% static 'admin/' %}pages/samples/login.html"> Login
-                  </a></li>
-                <li class="nav-item"> <a class="nav-link" href="{% static 'admin/' %}pages/samples/register.html">
-                    Register </a></li>
-              </ul>
-            </div>
-          </li>
-          <li class="nav-item">
-            <a class="nav-link" data-bs-toggle="collapse" href="#error" aria-expanded="false" aria-controls="error">
-              <i class="icon-ban menu-icon"></i>
-              <span class="menu-title">Error pages</span>
-              <i class="menu-arrow"></i>
-            </a>
-            <div class="collapse" id="error">
-              <ul class="nav flex-column sub-menu">
-                <li class="nav-item"> <a class="nav-link" href="{% static 'admin/' %}pages/samples/error-404.html"> 404
-                  </a></li>
-                <li class="nav-item"> <a class="nav-link" href="{% static 'admin/' %}pages/samples/error-500.html"> 500
-                  </a></li>
-              </ul>
-            </div>
-          </li>
-          <li class="nav-item">
-            <a class="nav-link" href="{% static 'admin/' %}../../../docs/documentation.html">
-              <i class="icon-paper menu-icon"></i>
-              <span class="menu-title">Documentation</span>
-            </a>
-          </li>
-          <li class="nav-item">
+          <li class="nav-item{% if 'faculty_list_semester' in request.path %} active{% endif %}">
             <a class="nav-link" href="{% url 'faculty_list_semester' %}">
               <i class="icon-paper menu-icon"></i>
               <span class="menu-title">Semesters</span>
             </a>
           </li>
-          <li class="nav-item">
+          <li class="nav-item{% if 'list_sub_sem' in request.path %} active{% endif %}">
             <a class="nav-link" href="{% url 'list_sub_sem' %}">
               <i class="icon-paper menu-icon"></i>
               <span class="menu-title">Subjects</span>
@@ -293,8 +197,8 @@
             </a>
             <div class="collapse" id="ui-basic">
               <ul class="nav flex-column sub-menu">
-                <li class="nav-item"> <a class="nav-link" href="{% url 'mark_attendance' %}">Mark Attendance</a></li>
-                <li class="nav-item"> <a class="nav-link" href="{% url 'show_attendance' %}">Show Attendance</a></li>
+                <li class="nav-item{% if 'mark_attendance' in request.path %} active{% endif %}"> <a class="nav-link" href="{% url 'mark_attendance' %}">Mark Attendance</a></li>
+                <li class="nav-item{% if 'show_attendance' in request.path %} active{% endif %}"> <a class="nav-link" href="{% url 'show_attendance' %}">Show Attendance</a></li>
                 
               </ul>
             </div>

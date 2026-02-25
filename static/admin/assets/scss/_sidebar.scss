@@ -13,6 +13,24 @@
   -moz-transition: width $action-transition-duration $action-transition-timing-function, background $action-transition-duration $action-transition-timing-function;
   -ms-transition: width $action-transition-duration $action-transition-timing-function, background $action-transition-duration $action-transition-timing-function;
 
+  /* Hide scrollbar while keeping scrolling functionality */
+  &::-webkit-scrollbar {
+    width: 0px;
+    background: transparent;
+  }
+  
+  &::-webkit-scrollbar-thumb {
+    background: transparent;
+  }
+  
+  &::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  
+  /* For Firefox */
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+
   .nav {
     overflow: hidden;
     flex-wrap: nowrap;
@@ -290,6 +308,25 @@
     -webkit-transition: all 0.25s ease-out;
     -o-transition: all 0.25s ease-out;
     transition: all 0.25s ease-out;
+    
+    /* Hide scrollbar while keeping scrolling functionality */
+    &::-webkit-scrollbar {
+      width: 0px;
+      background: transparent;
+    }
+    
+    &::-webkit-scrollbar-thumb {
+      background: transparent;
+    }
+    
+    &::-webkit-scrollbar-track {
+      background: transparent;
+    }
+    
+    /* For Firefox */
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+    
     &.active {
       right: 0;
     }

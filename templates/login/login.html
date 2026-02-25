@@ -12,7 +12,7 @@
 			<input type="email" name="email" placeholder="Email" required />
 			<input type="text" name="phone" placeholder="Phone Number" pattern="[1-9][0-9]{9}" maxlength="10" title="Phone number must be 10 digits and cannot be all zeros" required/>
 			<input type="password" name="password" placeholder="Password" required/>
-			<select name="dept" id="dept" required onchange="filterAcademicYears()">
+			<select name="dept" id="dept" required onchange="filterBatches()">
 				<option value="" disabled selected>Department</option>
 				{% for i in department  %}
 				<option value="{{ i.department_id }}">{{ i.department_name }}</option>
@@ -28,16 +28,26 @@
 			
 			<!-- Student-specific fields -->
 			<div id="student-fields" style="display: none;">
+				<select name="batch" id="batch" onchange="filterAcademicYears()">
+					<option value="" disabled selected>Batch</option>
+					{% for batch in batches %}
+					<option value="{{ batch.batch_id }}" data-department="{{ batch.fk_department_id }}">{{ batch.batch_name }}</option>
+					{% endfor %}
+				</select>
 				<select name="academic_year" id="academic_year" onchange="filterSemestersByYear()">
 					<option value="" disabled selected>Academic Year</option>
 					{% for year in academic_years %}
-					<option value="{{ year.academic_year }}" data-department="{{ year.fk_department_id }}">{{ year.academic_year }}</option>
+					<option value="{{ year.academic_id }}" data-batch="{{ year.fk_batch_id }}">{{ year.academic_year }}</option>
 					{% endfor %}
 				</select>
 				<select name="semester" id="semester">
 					<option value="" disabled selected>Semester</option>
 					{% for semester in semesters %}
-					<option value="{{ semester.semester_id }}" data-department="{{ semester.fk_department_id }}">Sem {{ semester.semester_number }}</option>
+						{% for academic in academic_years %}
+							{% if academic.academic_id == semester.fk_academic_id %}
+								<option value="{{ semester.semester_id }}" data-academic="{{ semester.fk_academic_id }}" data-batch="{{ academic.fk_batch_id }}">Sem {{ semester.semester_number }}</option>
+							{% endif %}
+						{% endfor %}
 					{% endfor %}
 				</select>
 			</div>
@@ -76,27 +86,28 @@
 const roleSelect = document.getElementById('role');
 const studentFields = document.getElementById('student-fields');
 const deptSelect = document.getElementById('dept');
+const batchSelect = document.getElementById('batch');
 const semesterSelect = document.getElementById('semester');
 const academicYearSelect = document.getElementById('academic_year');
 
 roleSelect.addEventListener('change', function() {
     if (this.value === 'student') {
         studentFields.style.display = 'block';
-        // Filter academic years when student role is selected
-        filterAcademicYears();
+        // Filter batches when student role is selected
+        filterBatches();
     } else {
         studentFields.style.display = 'none';
     }
 });
 
-function filterAcademicYears() {
+function filterBatches() {
     const selectedDept = deptSelect.value;
-    const yearOptions = academicYearSelect.querySelectorAll('option');
+    const batchOptions = batchSelect.querySelectorAll('option');
     
-    // Reset academic year selection
-    academicYearSelect.value = '';
+    // Reset batch selection
+    batchSelect.value = '';
     
-    yearOptions.forEach(option => {
+    batchOptions.forEach(option => {
         if (option.value === '') {
             // Keep the default option
             option.style.display = 'block';
@@ -112,8 +123,32 @@ function filterAcademicYears() {
     });
 }
 
+function filterAcademicYears() {
+    const selectedBatch = batchSelect.value;
+    const yearOptions = academicYearSelect.querySelectorAll('option');
+    
+    // Reset academic year selection
+    academicYearSelect.value = '';
+    
+    yearOptions.forEach(option => {
+        if (option.value === '') {
+            // Keep the default option
+            option.style.display = 'block';
+        } else {
+            // Show/hide based on batch
+            const optionBatch = option.getAttribute('data-batch');
+            if (optionBatch === selectedBatch) {
+                option.style.display = 'block';
+            } else {
+                option.style.display = 'none';
+            }
+        }
+    });
+}
+
 function filterSemestersByYear() {
-    const selectedDept = deptSelect.value;
+    const selectedBatch = batchSelect.value;
+    const selectedAcademic = academicYearSelect.value;
     const semesterOptions = semesterSelect.querySelectorAll('option');
     
     // Reset semester selection
@@ -124,9 +159,12 @@ function filterSemestersByYear() {
             // Keep the default option
             option.style.display = 'block';
         } else {
-            // Show/hide based on department
-            const optionDept = option.getAttribute('data-department');
-            if (optionDept === selectedDept) {
+            // Show/hide based on BOTH batch and academic year
+            const optionAcademic = option.getAttribute('data-academic');
+            const optionBatch = option.getAttribute('data-batch');
+            
+            // Must match both selected batch AND selected academic year
+            if (optionAcademic === selectedAcademic && optionBatch === selectedBatch) {
                 option.style.display = 'block';
             } else {
                 option.style.display = 'none';

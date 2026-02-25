@@ -23,6 +23,7 @@
   <!-- End plugin css for this page -->
   <!-- inject:css -->
   <link rel="stylesheet" href="{% static 'admin/' %}assets/css/style.css">
+  <link rel="stylesheet" href="{% static 'admin/' %}assets/css/custom.css">
   <!-- endinject -->
   <link rel="shortcut icon" href="{% static 'admin/' %}assets/images/favicon.png" />
   
@@ -32,19 +33,29 @@
       position: fixed !important;
       top: 60px !important;
       left: 0 !important;
-      width: 250px !important;
+      width: 235px !important;
       height: calc(100vh - 60px) !important;
       overflow-y: auto !important;
       z-index: 1000 !important;
     }
     
     .page-body-wrapper {
-      margin-left: 250px !important;
+      margin-left: 235px !important;
+    }
+    
+    /* Allow sidebar-icon-only to work */
+    body.sidebar-icon-only .sidebar {
+      width: 70px !important;
+    }
+    
+    body.sidebar-icon-only .page-body-wrapper {
+      margin-left: 70px !important;
     }
     
     @media (max-width: 991px) {
       .sidebar {
         position: fixed !important;
+        left: -235px !important;
         left: -250px !important;
         right: auto !important;
       }
@@ -163,15 +174,15 @@
       <!-- partial:partials/_sidebar.html -->
       <nav class="sidebar sidebar-offcanvas" id="sidebar">
         <ul class="nav">
-          <li class="nav-item">
-            <a class="nav-link" href="index.html">
+          <li class="nav-item{% if 'administrator' in request.path and request.path == '/admin_dashboard/administrator/' %} active{% endif %}">
+            <a class="nav-link" href="{% url 'admin' %}" id="dashboard-link">
               <i class="icon-grid menu-icon"></i>
               <span class="menu-title">Dashboard</span>
             </a>
           </li>
-          <li class="nav-item">
+          <!-- <li class="nav-item">
             <a class="nav-link" data-bs-toggle="collapse" href="#ui-basic" aria-expanded="false"
-              aria-controls="ui-basic">
+              aria-controls="ui-basic" id="ui-basic-link">
               <i class="icon-layout menu-icon"></i>
               <span class="menu-title">UI Elements</span>
               <i class="menu-arrow"></i>
@@ -179,17 +190,17 @@
             <div class="collapse" id="ui-basic">
               <ul class="nav flex-column sub-menu">
                 <li class="nav-item"> <a class="nav-link"
-                    href="{% static 'admin/' %}pages/ui-features/buttons.html">Buttons</a></li>
+                    href="{% static 'admin/' %}pages/ui-features/buttons.html" id="buttons-link">Buttons</a></li>
                 <li class="nav-item"> <a class="nav-link"
-                    href="{% static 'admin/' %}pages/ui-features/dropdowns.html">Dropdowns</a></li>
+                    href="{% static 'admin/' %}pages/ui-features/dropdowns.html" id="dropdowns-link">Dropdowns</a></li>
                 <li class="nav-item"> <a class="nav-link"
-                    href="{% static 'admin/' %}pages/ui-features/typography.html">Typography</a></li>
+                    href="{% static 'admin/' %}pages/ui-features/typography.html" id="typography-link">Typography</a></li>
               </ul>
             </div>
           </li>
           <li class="nav-item">
             <a class="nav-link" data-bs-toggle="collapse" href="#form-elements" aria-expanded="false"
-              aria-controls="form-elements">
+              aria-controls="form-elements" id="form-elements-link">
               <i class="icon-columns menu-icon"></i>
               <span class="menu-title">Form elements</span>
               <i class="menu-arrow"></i>
@@ -197,12 +208,13 @@
             <div class="collapse" id="form-elements">
               <ul class="nav flex-column sub-menu">
                 <li class="nav-item"><a class="nav-link"
-                    href="{% static 'admin/' %}pages/forms/basic_elements.html">Basic Elements</a></li>
+                    href="{% static 'admin/' %}pages/forms/basic_elements.html" id="basic-elements-link">Basic Elements</a></li>
               </ul>
             </div>
           </li>
           <li class="nav-item">
-            <a class="nav-link" data-bs-toggle="collapse" href="#charts" aria-expanded="false" aria-controls="charts">
+            <a class="nav-link" data-bs-toggle="collapse" href="#charts" aria-expanded="false" aria-controls="charts"
+              id="charts-link">
               <i class="icon-bar-graph menu-icon"></i>
               <span class="menu-title">Charts</span>
               <i class="menu-arrow"></i>
@@ -210,12 +222,13 @@
             <div class="collapse" id="charts">
               <ul class="nav flex-column sub-menu">
                 <li class="nav-item"> <a class="nav-link"
-                    href="{% static 'admin/' %}pages/charts/chartjs.html">ChartJs</a></li>
+                    href="{% static 'admin/' %}pages/charts/chartjs.html" id="chartjs-link">ChartJs</a></li>
               </ul>
             </div>
           </li>
           <li class="nav-item">
-            <a class="nav-link" data-bs-toggle="collapse" href="#tables" aria-expanded="false" aria-controls="tables">
+            <a class="nav-link" data-bs-toggle="collapse" href="#tables" aria-expanded="false" aria-controls="tables"
+              id="tables-link">
               <i class="icon-grid-2 menu-icon"></i>
               <span class="menu-title">Tables</span>
               <i class="menu-arrow"></i>
@@ -223,99 +236,106 @@
             <div class="collapse" id="tables">
               <ul class="nav flex-column sub-menu">
                 <li class="nav-item"> <a class="nav-link"
-                    href="{% static 'admin/' %}pages/tables/basic-table.html">Basic table</a></li>
+                    href="{% static 'admin/' %}pages/tables/basic-table.html" id="basic-table-link">Basic table</a></li>
               </ul>
             </div>
           </li>
           <li class="nav-item">
-            <a class="nav-link" data-bs-toggle="collapse" href="#icons" aria-expanded="false" aria-controls="icons">
+            <a class="nav-link" data-bs-toggle="collapse" href="#icons" aria-expanded="false" aria-controls="icons"
+              id="icons-link">
               <i class="icon-contract menu-icon"></i>
               <span class="menu-title">Icons</span>
               <i class="menu-arrow"></i>
             </a>
             <div class="collapse" id="icons">
               <ul class="nav flex-column sub-menu">
-                <li class="nav-item"> <a class="nav-link" href="{% static 'admin/' %}pages/icons/mdi.html">Mdi icons</a>
+                <li class="nav-item"> <a class="nav-link" href="{% static 'admin/' %}pages/icons/mdi.html"
+                    id="mdi-icons-link">Mdi icons</a>
                 </li>
               </ul>
             </div>
           </li>
           <li class="nav-item">
-            <a class="nav-link" data-bs-toggle="collapse" href="#auth" aria-expanded="false" aria-controls="auth">
+            <a class="nav-link" data-bs-toggle="collapse" href="#auth" aria-expanded="false" aria-controls="auth"
+              id="auth-link">
               <i class="icon-head menu-icon"></i>
               <span class="menu-title">User Pages</span>
               <i class="menu-arrow"></i>
             </a>
             <div class="collapse" id="auth">
               <ul class="nav flex-column sub-menu">
-                <li class="nav-item"> <a class="nav-link" href="{% static 'admin/' %}pages/samples/login.html"> Login
+                <li class="nav-item"> <a class="nav-link" href="{% static 'admin/' %}pages/samples/login.html"
+                    id="login-link"> Login
                   </a></li>
-                <li class="nav-item"> <a class="nav-link" href="{% static 'admin/' %}pages/samples/register.html">
-                    Register </a></li>
+                <li class="nav-item"> <a class="nav-link" href="{% static 'admin/' %}pages/samples/register.html"
+                    id="register-link"> Register </a></li>
               </ul>
             </div>
           </li>
           <li class="nav-item">
-            <a class="nav-link" data-bs-toggle="collapse" href="#error" aria-expanded="false" aria-controls="error">
+            <a class="nav-link" data-bs-toggle="collapse" href="#error" aria-expanded="false" aria-controls="error"
+              id="error-link">
               <i class="icon-ban menu-icon"></i>
               <span class="menu-title">Error pages</span>
               <i class="menu-arrow"></i>
             </a>
             <div class="collapse" id="error">
               <ul class="nav flex-column sub-menu">
-                <li class="nav-item"> <a class="nav-link" href="{% static 'admin/' %}pages/samples/error-404.html"> 404
+                <li class="nav-item"> <a class="nav-link" href="{% static 'admin/' %}pages/samples/error-404.html"
+                    id="error-404-link"> 404
                   </a></li>
-                <li class="nav-item"> <a class="nav-link" href="{% static 'admin/' %}pages/samples/error-500.html"> 500
+                <li class="nav-item"> <a class="nav-link" href="{% static 'admin/' %}pages/samples/error-500.html"
+                    id="error-500-link"> 500
                   </a></li>
               </ul>
             </div>
           </li>
           <li class="nav-item">
-            <a class="nav-link" href="{% static 'admin/' %}../../../docs/documentation.html">
+            <a class="nav-link" href="{% static 'admin/' %}../../../docs/documentation.html" id="documentation-link">
               <i class="icon-paper menu-icon"></i>
               <span class="menu-title">Documentation</span>
             </a>
-          </li>
-          <li class="nav-item">
-            <a class="nav-link" href="{% url 'department' %}">
-              <i class="icon-paper menu-icon"></i>
+          </li> -->
+          <li class="nav-item{% if 'department' in request.path %} active{% endif %}">
+            <a class="nav-link" href="{% url 'department' %}" id="department-link">
+              <i class="icon-layers menu-icon"></i>
               <span class="menu-title">Department</span>
             </a>
           </li>
-          <li class="nav-item">
-            <a class="nav-link" href="{% url 'leave_request' %}">
+          <li class="nav-item{% if 'batch_management' in request.path %} active{% endif %}">
+            <a class="nav-link" href="{% url 'batch_management' %}" id="batch-management-link">
+              <i class="ti-book menu-icon"></i>
+              <span class="menu-title">Batch Management</span>
+            </a>
+          </li>
+          <li class="nav-item{% if 'academic_year' in request.path %} active{% endif %}">
+            <a class="nav-link" href="{% url 'academic_year' %}" id="academic-year-link">
+              <i class="ti-calendar menu-icon"></i>
+              <span class="menu-title">Academic Year</span>
+            </a>
+          </li>
+          <li class="nav-item{% if 'semester' in request.path %} active{% endif %}">
+            <a class="nav-link" href="{% url 'semester' %}" id="semester-link">
+              <i class="icon-clock menu-icon"></i>
+              <span class="menu-title">Semesters</span>
+            </a>
+          </li>
+          <li class="nav-item{% if 'leave_request' in request.path %} active{% endif %}">
+            <a class="nav-link" href="{% url 'leave_request' %}" id="leave-request-link">
               <i class="icon-paper menu-icon"></i>
               <span class="menu-title">Leave Request</span>
             </a>
           </li>
-          <li class="nav-item">
-            <a class="nav-link" href="{% url 'semester' %}">
-              <i class="icon-paper menu-icon"></i>
-              <span class="menu-title">Semesters</span>
-            </a>
-          </li>
-          <li class="nav-item">
-            <a class="nav-link" href="{% url 'academic_year' %}">
-              <i class="icon-paper menu-icon"></i>
-              <span class="menu-title">Academic Year</span>
-            </a>
-          </li>
-          <li class="nav-item">
-            <a class="nav-link" href="{% url 'show_student_attendance' %}">
-              <i class="icon-paper menu-icon"></i>
+          
+          <li class="nav-item{% if 'show_student_attendance' in request.path %} active{% endif %}">
+            <a class="nav-link" href="{% url 'show_student_attendance' %}" id="student-attendance-link">
+              <i class="ti-check-box menu-icon"></i>
               <span class="menu-title">Student Attendance</span>
             </a>
           </li>
-          <li class="nav-item">
-            <a class="nav-link" href="{% url 'batch_management' %}">
-              <i class="icon-paper menu-icon"></i>
-              <span class="menu-title">Batch Management</span>
-            </a>
-          </li>
+          
         </ul>
       </nav>
-
-
 
       {% block content %}
       {% endblock %}

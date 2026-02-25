@@ -12,11 +12,13 @@ def home(request):
 
 def login(request):
     departments = models.Departments.objects.all()
-    
-    academic_years = models.AcademicYears.objects.values('academic_year', 'fk_department_id').distinct()
+    batches = models.Batches.objects.all()
+    academic_years = models.AcademicYears.objects.all()
     semesters = models.Semesters.objects.all()
+    
     return render(request, 'login/login.html', {
         'department': departments,
+        'batches': batches,
         'academic_years': academic_years,
         'semesters': semesters
     })
@@ -66,7 +68,8 @@ def check_login(request):
     
 def register(request):
     departments = models.Departments.objects.all()
-    academic_years = models.AcademicYears.objects.values('academic_year', 'fk_department_id').distinct()
+    batches = models.Batches.objects.all()
+    academic_years = models.AcademicYears.objects.all()
     semesters = models.Semesters.objects.all()
     
     if request.method == "POST":
@@ -76,20 +79,20 @@ def register(request):
         password = request.POST['password']
         role = request.POST['role']
         department_id = request.POST['dept']
-        academic_year = request.POST.get('academic_year', '')
+        batch_id = request.POST.get('batch', '')
+        academic_year_id = request.POST.get('academic_year', '')
         semester_id = request.POST.get('semester', '')
         
         # Set academic and semester IDs (0 for non-students)
         fk_academic_id = 0
         fk_semester_id = 0
+        fk_batch_id = 0
         
-        if role == 'student' and academic_year:
-            academic_obj = models.AcademicYears.objects.filter(
-                academic_year=academic_year, 
-                fk_department_id=department_id
-            ).first()
-            fk_academic_id = academic_obj.academic_id if academic_obj else 0
+        if role == 'student' and academic_year_id:
+            # For students, get the academic year ID directly from form
+            fk_academic_id = int(academic_year_id) if academic_year_id else 0
             fk_semester_id = int(semester_id) if semester_id else 0
+            fk_batch_id = int(batch_id) if batch_id else 0
         
         if models.Login.objects.filter(username=email).exists():
             messages.error(request, "User with this email already exists!")
@@ -99,6 +102,7 @@ def register(request):
                 models.Users(full_name=fullname, email=email, phone=phone, role=role,
                     fk_department_id=department_id, status="Active", 
                     created_at=datetime.now().date(),
+                    fk_batch_id=fk_batch_id,
                     fk_academic_id=fk_academic_id, fk_semester_id=fk_semester_id
                 ).save()
                 messages.success(request, "Registration successful!")
@@ -108,6 +112,7 @@ def register(request):
     
     return render(request, 'login/login.html', {
         'department': departments,
+        'batches': batches,
         'academic_years': academic_years,
         'semesters': semesters
     })
