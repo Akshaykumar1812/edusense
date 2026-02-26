@@ -285,9 +285,7 @@ class Semesters(models.Model):
 class Subjects(models.Model):
     subject_id = models.AutoField(primary_key=True)
     subject_name = models.CharField(max_length=50)
-    fk_department_id = models.IntegerField()
     fk_batch_id = models.IntegerField()
-    fk_faculty_id = models.IntegerField()
     fk_semester_id = models.IntegerField()
 
     class Meta:

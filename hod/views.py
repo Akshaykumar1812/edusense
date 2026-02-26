@@ -120,98 +120,128 @@ def hod_list_semester(request):
     
     return render(request,'hod/hod_list_semester.html', context)
 
-def list_assign_subject(request):
-    username = request.session['email']
-    hod = models.Users.objects.get(email=username)
-
-    subjects = models.Subjects.objects.filter(fk_department_id=hod.fk_department_id)
-    
-    data = []
-    for subject in subjects:
-        faculty = models.Users.objects.get(user_id=subject.fk_faculty_id)
-        department = models.Departments.objects.get(department_id=subject.fk_department_id)
-        semester = models.Semesters.objects.get(semester_id=subject.fk_semester_id)
-        batch = models.Batches.objects.get(batch_id=subject.fk_batch_id)
-
-        data.append({'subject': subject,'faculty': faculty,'department': department,'semester': semester, 'batch': batch})
-
-    return render(request,'hod/list_assign_subject.html',{'data': data})
-
-
-def add_assign_subject(request):
+def add_subject(request):
     username = request.session['email']
     hod = models.Users.objects.get(email=username)
     
     # Get batches for HOD's department
     batches = models.Batches.objects.filter(fk_department_id=hod.fk_department_id)
-    faculty = models.Users.objects.filter(role='faculty', fk_department_id=hod.fk_department_id)
-
-    selected_batch = None
+    
+    # Get unique semesters for each batch (by semester number, not by academic year)
     semesters = []
-
+    for batch in batches:
+        academic_years = models.AcademicYears.objects.filter(fk_batch_id=batch.batch_id)
+        batch_semesters = models.Semesters.objects.filter(fk_academic_id__in=academic_years.values_list('academic_id', flat=True))
+        
+        # Get unique semester numbers for this batch
+        unique_semesters = {}
+        for semester in batch_semesters:
+            if semester.semester_number not in unique_semesters:
+                unique_semesters[semester.semester_number] = semester
+        
+        # Add unique semesters to the list
+        for semester_number, semester in unique_semesters.items():
+            semesters.append({
+                'semester': semester,
+                'batch_id': batch.batch_id
+            })
+    
     if request.method == "POST":
-        if 'batch' in request.POST and 'semester' not in request.POST:
-            selected_batch = int(request.POST['batch'])
-            # Get semesters for selected batch
-            academic_years = models.AcademicYears.objects.filter(fk_batch_id=selected_batch)
-            semesters = models.Semesters.objects.filter(fk_academic_id__in=academic_years.values_list('academic_id', flat=True))
-        elif 'semester' in request.POST and 'assign_faculty' in request.POST and 'subject_name' in request.POST:
-            subject_name = request.POST['subject_name']
-            batch_id = int(request.POST['batch'])
-            semester_id = int(request.POST['semester'])
-            assign_faculty_id = int(request.POST['assign_faculty'])
-
-            if not models.Subjects.objects.filter(subject_name=subject_name, fk_semester_id=semester_id, fk_faculty_id=assign_faculty_id).exists():
-                sub_info = models.Subjects(
-                    subject_name=subject_name,
-                    fk_department_id=hod.fk_department_id,
-                    fk_batch_id=batch_id,
+        batch_id = request.POST.get('batch')
+        semester_id = request.POST.get('semester')
+        subjects = request.POST.getlist('subjects[]')
+        
+        # Filter out empty subject names
+        subjects = [subject.strip() for subject in subjects if subject.strip()]
+        
+        if batch_id and semester_id and subjects:
+            for subject_name in subjects:
+                # Check if subject already exists for this semester
+                if not models.Subjects.objects.filter(
+                    subject_name=subject_name, 
                     fk_semester_id=semester_id,
-                    fk_faculty_id=assign_faculty_id
-                )
-                sub_info.save()
-            return redirect('list_assign_subject')
-
-    return render(request, 'hod/add_assign_subject.html', {
+                    fk_batch_id=batch_id
+                ).exists():
+                    
+                    # Create new subject
+                    subject = models.Subjects(
+                        subject_name=subject_name,
+                        fk_batch_id=batch_id,
+                        fk_semester_id=semester_id
+                    )
+                    subject.save()
+        
+        return redirect('list_subject')
+    
+    return render(request, 'hod/add_subject.html', {
         'batches': batches,
-        'faculty': faculty,
-        'semesters': semesters,
-        'selected_batch': selected_batch
+        'semesters': semesters
     })
 
-
-def edit_assign_subject(request,subject_id):
-    subject = models.Subjects.objects.get(subject_id=subject_id)
-    faculty = models.Users.objects.filter(role='faculty')
-    department = models.Departments.objects.all()
+def list_subject(request):
+    username = request.session['email']
+    hod = models.Users.objects.get(email=username)
+    batches = models.Batches.objects.filter(fk_department_id=hod.fk_department_id)
     
+    # Get all semesters for template
+    semesters = []
+    for batch in batches:
+        academic_years = models.AcademicYears.objects.filter(fk_batch_id=batch.batch_id)
+        batch_semesters = models.Semesters.objects.filter(fk_academic_id__in=academic_years.values_list('academic_id', flat=True))
+        
+        # Get unique semester numbers for this batch
+        unique_semesters = {}
+        for semester in batch_semesters:
+            if semester.semester_number not in unique_semesters:
+                unique_semesters[semester.semester_number] = semester
+        
+        # Add unique semesters to list
+        for semester_number, semester in unique_semesters.items():
+            semesters.append({
+                'semester': semester,
+                'batch_id': batch.batch_id
+            })
+    
+    # Handle filtering
+    selected_batch = request.POST.get('batch', '')
+    selected_semester = request.POST.get('semester', '')
+    
+    # Get subjects for HOD's department
+    subjects = models.Subjects.objects.filter(fk_batch_id__in=batches.values_list('batch_id', flat=True))
+    
+    # Filter subjects based on selections
+    if selected_batch and selected_semester:
+        subjects = subjects.filter(fk_batch_id=selected_batch, fk_semester_id=selected_semester)
+    elif selected_batch:
+        subjects = subjects.filter(fk_batch_id=selected_batch)
+    elif selected_semester:
+        subjects = subjects.filter(fk_semester_id=selected_semester)
+    
+    data = []
+    for subject in subjects:
+        batch = models.Batches.objects.get(batch_id=subject.fk_batch_id)
+        semester = models.Semesters.objects.get(semester_id=subject.fk_semester_id)
+        
+        data.append({
+            'subject': subject,
+            'batch': batch,
+            'semester': semester
+        })
+    
+    context = {
+        'data': data,
+        'batches': batches,
+        'semesters': semesters,
+        'selected_batch': selected_batch,
+        'selected_semester': selected_semester
+    }
+    
+    return render(request, 'hod/list_subject.html', context)
 
-    if request.method == "POST":
-        subject.subject_name = request.POST['subject_name']
-        subject.fk_department_id = request.POST['department']
-        subject.fk_faculty_id = request.POST['assign_faculty']
-        subject.fk_semester_id = request.POST['semester']
-        subject.save()
-
-    sub_faculty = models.Users.objects.get(user_id=subject.fk_faculty_id)
-    sub_department = models.Departments.objects.get(department_id=subject.fk_department_id)
-    sub_semester = models.Semesters.objects.get(semester_id=subject.fk_semester_id)
-
-    semesters = models.Semesters.objects.filter(fk_department_id=sub_department.department_id)
-
-    return render(request,'hod/edit_assign_subject.html',{
-        'subject':subject,
-        'sub_faculty':sub_faculty,
-        'faculty':faculty,
-        'sub_department':sub_department,
-        'department':department,
-        'sub_semester': sub_semester,
-        'semesters': semesters})
-
-def delete_assign_subject(request, subject_id):
+def delete_subject(request, subject_id):
     subject = models.Subjects.objects.get(subject_id=subject_id)
     subject.delete()
-    return redirect('list_assign_subject')
+    return redirect('list_subject')
 
 
 def student_attendance(request):

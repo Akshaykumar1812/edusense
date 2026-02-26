@@ -1,0 +1,121 @@
+{% extends 'hod/hod_layout.html' %}
+{% load static %}
+{% block content %}
+
+<div class="main-panel">
+    <div class="content-wrapper">
+        <div class="row">
+
+            <div class="row justify-content-center">
+                <div class="col-md-8 grid-margin stretch-card">
+                    <div class="card">
+                        <div class="card-body">
+                            <h4 class="card-title text-center mb-4">Add Subjects</h4>
+                            <form class="forms-sample" method="POST" action="{% url 'add_subject' %}">
+                                {% csrf_token %}
+                                
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="form-group">
+                                            <label for="batch" style="font-weight: bold;">Batch</label>
+                                            <select name="batch" id="batch" class="form-control" required>
+                                                <option value="" disabled selected>Select Batch</option>
+                                                {% for batch in batches %}
+                                                <option value="{{ batch.batch_id }}">{{ batch.batch_name }}</option>
+                                                {% endfor %}
+                                            </select>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="form-group">
+                                            <label for="semester" style="font-weight: bold;">Semester</label>
+                                            <select name="semester" id="semester" class="form-control" required>
+                                                <option value="" disabled selected>Select Semester</option>
+                                                {% for semester_data in semesters %}
+                                                <option value="{{ semester_data.semester.semester_id }}" data-batch="{{ semester_data.batch_id }}">
+                                                    Semester {{ semester_data.semester.semester_number }}
+                                                </option>
+                                                {% endfor %}
+                                            </select>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="form-group">
+                                    <label style="font-weight: bold;">Subjects</label>
+                                    <div id="subjects-container">
+                                        <div class="subject-row mb-2 d-flex">
+                                            <input type="text" name="subjects[]" class="form-control" placeholder="Enter subject name" required>
+                                            <button type="button" class="btn btn-danger btn-sm ms-2" onclick="removeSubjectField(this)">Remove</button>
+                                        </div>
+                                    </div>
+                                    <button type="button" class="btn btn-success btn-sm mt-2" onclick="addSubjectField()">+ Add More</button>
+                                </div>
+                                
+                                <div class="text-center mt-4">
+                                    <button type="submit" class="btn btn-primary me-2">Add Subjects</button>
+                                    <button type="reset" class="btn btn-light">Cancel</button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+<script>
+function addSubjectField() {
+    var container = document.getElementById('subjects-container');
+    var newField = document.createElement('div');
+    newField.className = 'subject-row mb-2 d-flex';
+    newField.innerHTML = '<input type="text" name="subjects[]" class="form-control" placeholder="Enter subject name" required><button type="button" class="btn btn-danger btn-sm ms-2" onclick="removeSubjectField(this)">Remove</button>';
+    container.appendChild(newField);
+}
+
+function removeSubjectField(button) {
+    var container = document.getElementById('subjects-container');
+    var subjectRows = container.querySelectorAll('.subject-row');
+    
+    // Don't remove if it's the last subject field
+    if (subjectRows.length > 1) {
+        button.parentElement.remove();
+    } else {
+        alert('At least one subject field is required');
+    }
+}
+
+document.getElementById('batch').addEventListener('change', function() {
+    var selectedBatch = this.value;
+    var semesterSelect = document.getElementById('semester');
+    var options = semesterSelect.querySelectorAll('option');
+    
+    semesterSelect.value = '';
+    
+    options.forEach(function(option) {
+        if (option.value === '') return;
+        
+        if (selectedBatch === '') {
+            option.style.display = 'none';
+        } else {
+            var batchId = option.getAttribute('data-batch');
+            option.style.display = batchId === selectedBatch ? 'block' : 'none';
+        }
+    });
+});
+
+// Initially hide all semester options except placeholder
+document.addEventListener('DOMContentLoaded', function() {
+    var semesterSelect = document.getElementById('semester');
+    var options = semesterSelect.querySelectorAll('option');
+    
+    options.forEach(function(option) {
+        if (option.value !== '') {
+            option.style.display = 'none';
+        }
+    });
+});
+</script>
+
+{% endblock %}

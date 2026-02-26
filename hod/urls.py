@@ -12,10 +12,9 @@ urlpatterns = [
 
     path('hod_list_semester/',views.hod_list_semester,name="hod_list_semester"),
     
-    path('list_assign_subject/',views.list_assign_subject,name="list_assign_subject"),
-    path('add_assign_subject/',views.add_assign_subject,name="add_assign_subject"),
-    path('edit_assign_subject/<int:subject_id>/',views.edit_assign_subject,name="edit_assign_subject"),
-    path('delete_assign_subject/<int:subject_id>/',views.delete_assign_subject,name="delete_assign_subject"),
+    path('add_subject/',views.add_subject,name="add_subject"),
+    path('list_subject/',views.list_subject,name="list_subject"),
+    path('delete_subject/<int:subject_id>/',views.delete_subject,name="delete_subject"),
 
     path('student_attendance/',views.student_attendance,name="student_attendance"),
 

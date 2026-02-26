@@ -169,7 +169,7 @@
       <!-- partial:partials/_sidebar.html -->
       <nav class="sidebar sidebar-offcanvas" id="sidebar">
         <ul class="nav">
-          <li class="nav-item">
+          <li class="nav-item{% if 'hod' in request.path and request.path == '/hod_dashboard/hod/' %} active{% endif %}">
             <a class="nav-link" href="{% url 'hod' %}">
               <i class="icon-grid menu-icon"></i>
               <span class="menu-title">Dashboard</span>
@@ -181,10 +181,25 @@
               <span class="menu-title">Semesters</span>
             </a>
           </li>
+          <li class="nav-item">
+            <a class="nav-link" data-bs-toggle="collapse" href="#ui-basic" aria-expanded="false"
+              aria-controls="ui-basic">
+              <i class="icon-layout menu-icon"></i>
+              <span class="menu-title">Subject</span>
+              <i class="menu-arrow"></i>
+            </a>
+            <div class="collapse" id="ui-basic">
+              <ul class="nav flex-column sub-menu">
+                <li class="nav-item{% if 'add_subject' in request.path %} active{% endif %}"> <a class="nav-link" href="{% url 'add_subject' %}">Add Subject</a></li>
+                <li class="nav-item{% if 'list_subject' in request.path %} active{% endif %}"> <a class="nav-link" href="{% url 'list_subject' %}">Show Subject</a></li>
+                
+              </ul>
+            </div>
+          </li>
           <li class="nav-item{% if 'list_assign_subject' in request.path %} active{% endif %}">
-            <a class="nav-link" href="{% url 'list_assign_subject' %}">
+            <a class="nav-link" href="">
               <i class="icon-paper menu-icon"></i>
-              <span class="menu-title">Assigned Subjects</span>
+              <span class="menu-title">Time Table</span>
             </a>
           </li>
           <li class="nav-item{% if 'student_attendance' in request.path %} active{% endif %}">
