@@ -19,12 +19,12 @@
                                     placeholder="Name of Subject" value="{{ request.POST.subject_name }}" required>
                                 </div>
                                 <div class="form-group">
-                                    <label for="exampleInputPassword4">Department</label>
-                                    <select name="department" class="form-control" onchange="this.form.submit()" required>
-                                        <option value="" disabled selected>--Select Department--</option>
-                                        {% for dept in department %}
-                                            <option value="{{ dept.department_id }}"
-                                            {% if selected_department == dept.department_id %}selected{% endif %}>{{ dept.department_name }}</option>
+                                    <label for="exampleInputPassword4">Batch</label>
+                                    <select name="batch" class="form-control" onchange="this.form.submit()" required>
+                                        <option value="" disabled selected>--Select Batch--</option>
+                                        {% for batch in batches %}
+                                            <option value="{{ batch.batch_id }}"
+                                            {% if selected_batch == batch.batch_id %}selected{% endif %}>{{ batch.batch_name }}</option>
                                         {% endfor %}
                                     </select>
                                 </div>
