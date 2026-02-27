@@ -37,13 +37,31 @@
                                 </div>
                                 <div class="form-group">
                                     <label for="exampleInputPassword4">Department Name</label>
-                                    <select name="department" class="form-control">
-                                        <option value="{{ user_department.department_id }}"  disabled selected>{{ user_department.department_name }}</option>
-
+                                    <input type="hidden" name="department" value="{{ user_department.department_id }}">
+                                    <select name="department_display" class="form-control" disabled>
+                                        <option value="{{ user_department.department_id }}" selected>{{ user_department.department_name }}</option>
                                         {% for dept in departments %}
                                             {% if dept.department_id != user_department.department_id %}
                                                 <option value="{{ dept.department_id }}">{{ dept.department_name }}</option>
                                             {% endif %}
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label for="exampleInputPassword4">Batch</label>
+                                    <select name="batch" id="batch" class="form-control" onchange="updateSemesters()">
+                                        <option value="">Select Batch</option>
+                                        {% for batch in batches %}
+                                            <option value="{{ batch.batch_id }}" {% if user_batch and user_batch.batch_id == batch.batch_id %}selected{% endif %}>{{ batch.batch_name }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label for="exampleInputPassword4">Semester</label>
+                                    <select name="semester" id="semester" class="form-control">
+                                        <option value="">Select Semester</option>
+                                        {% for semester_data in semesters %}
+                                            <option value="{{ semester_data.semester.semester_id }}" data-batch="{{ semester_data.batch_id }}" {% if user_semester and user_semester.semester_id == semester_data.semester.semester_id %}selected{% endif %}>Semester {{ semester_data.semester.semester_number }}</option>
                                         {% endfor %}
                                     </select>
                                 </div>
@@ -59,5 +77,49 @@
 
         </div>
     </div>
+
+<script>
+function updateSemesters() {
+    const selectedBatch = document.getElementById('batch').value;
+    const semesterSelect = document.getElementById('semester');
+    const semesterOptions = semesterSelect.querySelectorAll('option');
+    
+    // Store current selection
+    const currentSelection = semesterSelect.value;
+    
+    semesterOptions.forEach(option => {
+        if (option.value === '') {
+            // Keep "Select Semester" option
+            option.style.display = 'block';
+        } else {
+            // Show/hide based on batch - only show if batch is selected
+            const optionBatch = option.getAttribute('data-batch');
+            if (optionBatch === selectedBatch && selectedBatch !== '') {
+                option.style.display = 'block';
+            } else {
+                option.style.display = 'none';
+            }
+        }
+    });
+    
+    // Reset selection if no batch is selected
+    if (selectedBatch === '') {
+        semesterSelect.value = '';
+    } else {
+        // Restore selection if it's still visible, otherwise reset
+        const selectedOption = semesterSelect.querySelector(`option[value="${currentSelection}"]`);
+        if (selectedOption && selectedOption.style.display !== 'none') {
+            semesterSelect.value = currentSelection;
+        } else {
+            semesterSelect.value = '';
+        }
+    }
+}
+
+// Initialize filtering when page loads
+document.addEventListener('DOMContentLoaded', function() {
+    updateSemesters();
+});
+</script>
 
     {% endblock %}

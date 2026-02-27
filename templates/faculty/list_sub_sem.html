@@ -14,21 +14,21 @@
                             <form class="forms-sample" method="POST" action="">
                                 {% csrf_token %}
                                 <div class="form-group">
-                                    <label for="exampleInputPassword4">Department</label>
-                                    <select name="department" class="form-control" onchange="this.form.submit()" required>
-                                        <option value="" disabled selected>--Select Department--</option>
-                                        {% for dept in department %}
-                                        <option value="{{ dept.department_id }}" {% if selected_department == dept.department_id %} selected {% endif %} >{{dept.department_name }}</option>
+                                    <label for="exampleInputPassword4">Batch</label>
+                                    <select name="batch" id="batch" class="form-control" onchange="filterSemesters(); this.form.submit()" required>
+                                        <option value="" disabled selected>--Select Batch--</option>
+                                        {% for batch in batches %}
+                                        <option value="{{ batch.batch_id }}" {% if selected_batch == batch.batch_id|stringformat:"s" %} selected {% endif %} >{{batch.batch_name }}</option>
                                         {% endfor %}
                                     </select>
                                 </div>
                                 <div class="form-group">
                                     <label for="exampleInputPassword4">Semester</label>
-                                    <select name="semester" class="form-control" required>
+                                    <select name="semester" id="semester" class="form-control" required>
                                         <option value="" disabled selected>--Select Semester--</option>
-                                        {% for sem in semesters %}
-                                        <option value="{{ sem.semester_id }}" {% if selected_semester == sem.semester_id %} selected {% endif %}>
-                                         {{ sem.semester_number }}
+                                        {% for semester_data in semesters %}
+                                        <option value="{{ semester_data.semester.semester_id }}" data-batch="{{ semester_data.batch_id }}" {% if selected_semester == semester_data.semester.semester_id|stringformat:"s" %} selected {% endif %}>
+                                         Semester {{ semester_data.semester.semester_number }}
                                         </option>
                                         {% endfor %}
                                     </select>
@@ -47,27 +47,43 @@
             <!-- table div -->
              {% if show_table %}
             <div class="row justify-content-center">
-                <div class="col-md-6 grid-margin stretch-card">
+                <div class="col-md-9 grid-margin stretch-card">
                     <div class="card">
                         <div class="card-body">
-                            
-                            <h4 class="card-title">Courses List</h4>
+                           
+                            <h4 class="card-title text-center">Subjects List</h4>
 
                 <div class="table-responsive">
-                    <table class="table table-striped table-bordered text-center">
+                    <table class="table table-striped table-borderless text-center">
                         <thead>
                             <tr>
-                                <th>SL No.</th>
-                                <th>Subject Name</th>
+                                
                                
+                                <th>Batch</th>
+                                <th>Semester</th>
+                                <th>Subject Name</th>
                             </tr>
                         </thead>
                         <tbody>
                             {% for sub in subjects %}
                             <tr>
-                                <td>{{ forloop.counter }}</td>
+                                
+                                
+                                <td>
+                                    {% for batch in batches %}
+                                        {% if batch.batch_id == sub.fk_batch_id %}
+                                            {{ batch.batch_name }}
+                                        {% endif %}
+                                    {% endfor %}
+                                </td>
+                                <td>
+                                    {% for semester_data in semesters %}
+                                        {% if semester_data.semester.semester_id == sub.fk_semester_id %}
+                                            Semester {{ semester_data.semester.semester_number }}
+                                        {% endif %}
+                                    {% endfor %}
+                                </td>
                                 <td>{{ sub.subject_name }}</td>
-                        
                             </tr>
                             {% endfor %}
                         </tbody>
@@ -84,5 +100,49 @@
 
         </div>
     </div>
+
+<script>
+    function filterSemesters() {
+        const selectedBatch = document.getElementById('batch').value;
+        const semesterSelect = document.getElementById('semester');
+        const semesterOptions = semesterSelect.querySelectorAll('option');
+        
+        // Store current selection
+        const currentSelection = semesterSelect.value;
+        
+        semesterOptions.forEach(option => {
+            if (option.value === '') {
+                // Keep "Select Semester" option
+                option.style.display = 'block';
+            } else {
+                // Show/hide based on batch - only show if batch is selected
+                const optionBatch = option.getAttribute('data-batch');
+                if (optionBatch === selectedBatch && selectedBatch !== '') {
+                    option.style.display = 'block';
+                } else {
+                    option.style.display = 'none';
+                }
+            }
+        });
+        
+        // Reset selection if no batch is selected
+        if (selectedBatch === '') {
+            semesterSelect.value = '';
+        } else {
+            // Restore selection if it's still visible, otherwise reset
+            const selectedOption = semesterSelect.querySelector(`option[value="${currentSelection}"]`);
+            if (selectedOption && selectedOption.style.display !== 'none') {
+                semesterSelect.value = currentSelection;
+            } else {
+                semesterSelect.value = '';
+            }
+        }
+    }
+    
+    // Initialize filtering when page loads
+    document.addEventListener('DOMContentLoaded', function() {
+        filterSemesters();
+    });
+    </script>
 
     {% endblock %}

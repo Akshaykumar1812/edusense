@@ -64,13 +64,23 @@ def leave_request(request):
         try:
             user = models.Users.objects.get(user_id=leave.fk_user_id)
             department = models.Departments.objects.get(department_id=user.fk_department_id)
-            data.append({'leave': leave,'user': user,'department': department})
+            
+            # Get batch and semester information
+            batch = None
+            semester = None
+            try:
+                batch = models.Batches.objects.get(batch_id=user.fk_batch_id)
+                semester = models.Semesters.objects.get(semester_id=user.fk_semester_id)
+            except (models.Batches.DoesNotExist, models.Semesters.DoesNotExist):
+                pass
+            
+            data.append({'leave': leave, 'user': user, 'department': department, 'batch': batch, 'semester': semester})
         except models.Users.DoesNotExist:
             # Skip leave requests for deleted users
             continue
         except models.Departments.DoesNotExist:
             # Handle case where department doesn't exist
-            data.append({'leave': leave,'user': None,'department': None})
+            data.append({'leave': leave, 'user': None, 'department': None, 'batch': None, 'semester': None})
     return render(request, 'admin/leave_request.html', {'data': data})
 
 def delete_leave(request, leave_id):

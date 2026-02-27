@@ -5,45 +5,57 @@
 <div class="main-panel">
     <div class="content-wrapper">
         <div class="row">
-            <h4 class="card-title">Leave Request</h4><br>
+            <div class="row justify-content-center">
+                <div class="col-md-12 grid-margin stretch-card">
+                    <div class="card">
+                        <div class="card-body">
+                            <h4 class="card-title text-center mb-4">Leave Request</h4><br>
+                            <hr>
+                            </p>
+                            <div class="table-responsive">
+                                <table class="table table-striped table-borderless text-center">
+                                    <thead>
+                                        <tr>
+                                            <th>Applicant Name</th>
+                                            <th>Batch</th>
+                                            <th>Semester</th>
+                                            <th>Types</th>
+                                            <th>Dates</th>
+                                            <th>Reason</th>
+                                            <th>Status</th>
+                                            <th>Action</th>
 
-            </p>
-            <div class="table-responsive">
-                <table class="table table-bordered table-striped table-hover text-center">
-                    <thead>
-                        <tr>
-                            <th>Applicant Name</th>
-                            <th>Department</th>
-                            <th>Types</th>
-                            <th>Dates</th>
-                            <th>Reason</th>
-                            <th>Status</th>
-                            <th>Action</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for i in data %}
 
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for i in data %}
+                                        <tr>
+                                            <td>{{ i.user.full_name }}</td>
+                                            <td>{{ i.batch.batch_name|default:"N/A" }}</td>
+                                            <td>Sem {{ i.semester.semester_number|default:"N/A" }}</td>
+                                            <td>{{ i.leave.leave_type }}</td>
+                                            <td>{{ i.leave.start_date }} to {{ i.leave.end_date }}</td>
+                                            <td>{{ i.leave.reason }}</td>
+                                            <td>{{ i.leave.status }}</td>
+                                            <td>
+                                                <a href="{% url 'ai_analysis' i.leave.leave_id %}"
+                                                    class="btn btn-primary me-2 ">AI Analysis</a>
+                                                <a href="{% url 'delete_leave' i.leave.leave_id %}"
+                                                    class="btn btn-danger me-2 ">Delete</a>
+                                            </td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
 
-                        <tr>
-                            <td>{{ i.user.full_name }}</td>
-                            <td>{{ i.department.department_name }}</td>
-                            <td>{{ i.leave.leave_type }}</td>
-                            <td>{{ i.leave.start_date }} to {{ i.leave.end_date }}</td>
-                            <td>{{ i.leave.reason }}</td>
-                            <td>{{ i.leave.status }}</td>
-                            <td>
-                                <a href="{% url 'ai_analysis' i.leave.leave_id %}" class="btn btn-primary me-2 ">AI Analysis</a>
-                                <a href="{% url 'delete_leave' i.leave.leave_id %}" class="btn btn-danger me-2 ">Delete</a>
-                            </td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
+
+                        </div>
+                    </div>
+                </div>
             </div>
-
-
         </div>
     </div>
 
-    {% endblock %}
+{% endblock %}

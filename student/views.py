@@ -55,7 +55,7 @@ def add_leave(request):
 
     leave = models.LeaveRequests(fk_user_id=user.user_id,leave_type=leave_type,start_date=start_date,end_date=end_date,reason=reason,status=status,applied_on=applied_on)
     leave.save()
-    return redirect('apply_leave')
+    return redirect('leave_status')
 
 def leave_status(request):
     return render(request,'student/leave_status.html')
@@ -68,20 +68,93 @@ def student_profile(request):
     user = models.Users.objects.get(email=username)
     user_department = models.Departments.objects.get(department_id=user.fk_department_id)
     departments = models.Departments.objects.all()
-    return render(request,'student/student_profile.html',{'user': user,'user_department': user_department,'departments': departments})
+    
+    # Get batch and semester information
+    user_batch = None
+    user_semester = None
+    batches = models.Batches.objects.filter(fk_department_id=user.fk_department_id)
+    
+    try:
+        user_batch = models.Batches.objects.get(batch_id=user.fk_batch_id)
+        # Get semesters for the user's batch
+        academic_years = models.AcademicYears.objects.filter(fk_batch_id=user.fk_batch_id)
+        semesters = []
+        for semester in models.Semesters.objects.filter(fk_academic_id__in=academic_years.values_list('academic_id', flat=True)):
+            try:
+                academic_year = models.AcademicYears.objects.get(academic_id=semester.fk_academic_id)
+                semesters.append({
+                    'semester': semester,
+                    'batch_id': academic_year.fk_batch_id
+                })
+            except models.AcademicYears.DoesNotExist:
+                continue
+        user_semester = models.Semesters.objects.get(semester_id=user.fk_semester_id)
+    except (models.Batches.DoesNotExist, models.AcademicYears.DoesNotExist, models.Semesters.DoesNotExist):
+        semesters = []
+    
+    return render(request,'student/student_profile.html',{
+        'user': user,
+        'user_department': user_department, 
+        'departments': departments,
+        'user_batch': user_batch,
+        'user_semester': user_semester,
+        'batches': batches,
+        'semesters': semesters
+    })
 
 def update_student_profile(request):
     username=request.session['email']
     user=models.Users.objects.get(email=username)
     user.full_name = request.POST['full_name']
     user.phone = request.POST['phone']
-    user.fk_department_id = request.POST['department']
+    
+    # Handle department update (may not be present if disabled)
+    if 'department' in request.POST and request.POST['department']:
+        user.fk_department_id = request.POST['department']
+    
+    # Update batch and semester if provided
+    if 'batch' in request.POST and request.POST['batch']:
+        user.fk_batch_id = request.POST['batch']
+    if 'semester' in request.POST and request.POST['semester']:
+        user.fk_semester_id = request.POST['semester']
+    
     user.save()
 
     user_department = models.Departments.objects.get(department_id=user.fk_department_id)
     departments = models.Departments.objects.all()
+    
+    # Get updated batch and semester information
+    user_batch = None
+    user_semester = None
+    batches = models.Batches.objects.filter(fk_department_id=user.fk_department_id)
+    
+    try:
+        user_batch = models.Batches.objects.get(batch_id=user.fk_batch_id)
+        # Get semesters for the user's batch
+        academic_years = models.AcademicYears.objects.filter(fk_batch_id=user.fk_batch_id)
+        semesters = []
+        for semester in models.Semesters.objects.filter(fk_academic_id__in=academic_years.values_list('academic_id', flat=True)):
+            try:
+                academic_year = models.AcademicYears.objects.get(academic_id=semester.fk_academic_id)
+                semesters.append({
+                    'semester': semester,
+                    'batch_id': academic_year.fk_batch_id
+                })
+            except models.AcademicYears.DoesNotExist:
+                continue
+        user_semester = models.Semesters.objects.get(semester_id=user.fk_semester_id)
+    except (models.Batches.DoesNotExist, models.AcademicYears.DoesNotExist, models.Semesters.DoesNotExist):
+        semesters = []
 
-    return render(request, 'student/student_profile.html', {'user': user,'user_department': user_department,'departments': departments})
+    return render(request, 'student/student_profile.html', {
+        'user': user,
+        'user_department': user_department, 
+        'departments': departments,
+        'user_batch': user_batch,
+        'user_semester': user_semester,
+        'batches': batches,
+        'semesters': semesters
+    })
 
 def leave_status(request):
     username=request.session['email']
