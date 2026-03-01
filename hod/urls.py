@@ -21,4 +21,7 @@ urlpatterns = [
     path('add_timetable/',views.add_timetable,name="add_timetable"),
     path('list_timetable/',views.list_timetable,name="list_timetable"),
 
+    path('faculty_students/',views.faculty_students,name="faculty_students"),
+    path('delete_faculty/<int:user_id>/',views.delete_faculty,name="delete_faculty"),
+    path('delete_student/<int:user_id>/',views.delete_student,name="delete_student"),
 ]

@@ -211,6 +211,12 @@
               </ul>
             </div>
           </li>
+          <li class="nav-item{% if 'faculty_students' in request.path %} active{% endif %}">
+            <a class="nav-link" href="{% url 'faculty_students' %}">
+              <i class="icon-paper menu-icon"></i>
+              <span class="menu-title">Faculty and Student</span>
+            </a>
+          </li>
           <li class="nav-item{% if 'student_attendance' in request.path %} active{% endif %}">
             <a class="nav-link" href="{% url 'student_attendance' %}">
               <i class="icon-paper menu-icon"></i>

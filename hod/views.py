@@ -550,3 +550,169 @@ def list_timetable(request):
     }
     
     return render(request,'hod/list_timetable.html', context)
+
+
+def faculty_students(request):
+    username = request.session['email']
+    hod = models.Users.objects.get(email=username)
+    hod_department_id = hod.fk_department_id
+    
+    # Get batches for HOD's department
+    batches = models.Batches.objects.filter(fk_department_id=hod_department_id)
+    
+    # Get academic years for HOD's department
+    academic_years = models.AcademicYears.objects.filter(fk_batch_id__in=batches.values_list('batch_id', flat=True))
+    
+    # Get all semesters for HOD's department through academic years
+    semesters = models.Semesters.objects.filter(fk_academic_id__in=academic_years.values_list('academic_id', flat=True))
+    
+    selected_role = request.POST.get('role', '')
+    selected_batch = request.POST.get('batch', '')
+    selected_academic = request.POST.get('academic_year', '')
+    
+    faculty_list = []
+    student_list = []
+    
+    if request.method == 'POST' and selected_role:
+        if selected_role == 'faculty':
+            # Get faculty for HOD's department
+            faculty_list = models.Users.objects.filter(
+                fk_department_id=hod_department_id,
+                role='faculty'
+            ).order_by('full_name')
+            
+        elif selected_role == 'student':
+            # Base student query for HOD's department
+            student_query = models.Users.objects.filter(
+                fk_department_id=hod_department_id,
+                role='student'
+            )
+            
+            # Apply batch filter if selected
+            if selected_batch:
+                student_query = student_query.filter(fk_batch_id=selected_batch)
+            
+            # Apply academic year filter if selected
+            if selected_academic:
+                student_query = student_query.filter(fk_academic_id=selected_academic)
+            
+            student_list = student_query.order_by('full_name')
+    
+    context = {
+        'faculty_list': faculty_list,
+        'student_list': student_list,
+        'batches': batches,
+        'academic_years': academic_years,
+        'semesters': semesters,
+        'selected_role': selected_role,
+        'selected_batch': selected_batch,
+        'selected_academic': selected_academic
+    }
+    
+    return render(request, 'hod/faculty_students.html', context)
+
+
+def delete_faculty(request, user_id):
+    try:
+        # Get faculty user from Users table
+        faculty_user = models.Users.objects.get(user_id=user_id)
+        
+        # Get the HOD's department
+        username = request.session['email']
+        hod = models.Users.objects.get(email=username)
+        hod_department_id = hod.fk_department_id
+        
+        # Get email to delete from Login table
+        faculty_email = faculty_user.email
+        
+        # Delete from Login table (username is email)
+        models.Login.objects.filter(username=faculty_email).delete()
+        
+        # Delete from Users table
+        faculty_user.delete()
+        
+        messages.success(request, 'Faculty deleted successfully')
+        
+        # Get updated faculty list
+        faculty_list = models.Users.objects.filter(
+            fk_department_id=hod_department_id,
+            role='faculty'
+        ).order_by('full_name')
+        
+        # Get batches for context
+        batches = models.Batches.objects.filter(fk_department_id=hod_department_id)
+        academic_years = models.AcademicYears.objects.filter(fk_batch_id__in=batches.values_list('batch_id', flat=True))
+        semesters = models.Semesters.objects.filter(fk_academic_id__in=academic_years.values_list('academic_id', flat=True))
+        
+        context = {
+            'faculty_list': faculty_list,
+            'student_list': [],
+            'batches': batches,
+            'academic_years': academic_years,
+            'semesters': semesters,
+            'selected_role': 'faculty',
+            'selected_batch': '',
+            'selected_academic': ''
+        }
+        
+    except models.Users.DoesNotExist:
+        messages.error(request, 'Faculty not found')
+        return redirect('faculty_students')
+    except Exception as e:
+        messages.error(request, f'Error deleting faculty: {str(e)}')
+        return redirect('faculty_students')
+    
+    return render(request, 'hod/faculty_students.html', context)
+
+
+def delete_student(request, user_id):
+    try:
+        # Get student user from Users table
+        student_user = models.Users.objects.get(user_id=user_id)
+        
+        # Get the HOD's department
+        username = request.session['email']
+        hod = models.Users.objects.get(email=username)
+        hod_department_id = hod.fk_department_id
+        
+        # Get email to delete from Login table
+        student_email = student_user.email
+        
+        # Delete from Login table (username is email)
+        models.Login.objects.filter(username=student_email).delete()
+        
+        # Delete from Users table
+        student_user.delete()
+        
+        messages.success(request, 'Student deleted successfully')
+        
+        # Get updated student list
+        student_list = models.Users.objects.filter(
+            fk_department_id=hod_department_id,
+            role='student'
+        ).order_by('full_name')
+        
+        # Get batches for context
+        batches = models.Batches.objects.filter(fk_department_id=hod_department_id)
+        academic_years = models.AcademicYears.objects.filter(fk_batch_id__in=batches.values_list('batch_id', flat=True))
+        semesters = models.Semesters.objects.filter(fk_academic_id__in=academic_years.values_list('academic_id', flat=True))
+        
+        context = {
+            'faculty_list': [],
+            'student_list': student_list,
+            'batches': batches,
+            'academic_years': academic_years,
+            'semesters': semesters,
+            'selected_role': 'student',
+            'selected_batch': '',
+            'selected_academic': ''
+        }
+        
+    except models.Users.DoesNotExist:
+        messages.error(request, 'Student not found')
+        return redirect('faculty_students')
+    except Exception as e:
+        messages.error(request, f'Error deleting student: {str(e)}')
+        return redirect('faculty_students')
+    
+    return render(request, 'hod/faculty_students.html', context)
