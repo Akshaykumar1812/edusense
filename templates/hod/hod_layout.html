@@ -196,11 +196,20 @@
               </ul>
             </div>
           </li>
-          <li class="nav-item{% if 'list_assign_subject' in request.path %} active{% endif %}">
-            <a class="nav-link" href="">
-              <i class="icon-paper menu-icon"></i>
+          <li class="nav-item">
+            <a class="nav-link" data-bs-toggle="collapse" href="#ui-timetable" aria-expanded="false"
+              aria-controls="ui-timetable">
+              <i class="icon-clock menu-icon"></i>
               <span class="menu-title">Time Table</span>
+              <i class="menu-arrow"></i>
             </a>
+            <div class="collapse" id="ui-timetable">
+              <ul class="nav flex-column sub-menu">
+                <li class="nav-item{% if 'add_timetable' in request.path %} active{% endif %}"> <a class="nav-link" href="{% url 'add_timetable' %}">Add Timetable</a></li>
+                <li class="nav-item{% if 'list_timetable' in request.path %} active{% endif %}"> <a class="nav-link" href="{% url 'list_timetable' %}">Show Timetable</a></li>
+                
+              </ul>
+            </div>
           </li>
           <li class="nav-item{% if 'student_attendance' in request.path %} active{% endif %}">
             <a class="nav-link" href="{% url 'student_attendance' %}">

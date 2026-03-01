@@ -1,0 +1,513 @@
+{% extends 'hod/hod_layout.html' %}
+{% load static %}
+{% block content %}
+
+<style>
+/* Full color for selected dropdown values */
+.form-control option {
+    color: #333 !important;
+    background-color: #fff !important;
+}
+
+.form-control option:checked {
+    color: #333 !important;
+    background-color: #f8f9fa !important;
+}
+
+.form-control {
+    color: #333 !important;
+}
+
+/* Ensure placeholder text is visible */
+.form-control option:disabled {
+    color: #6c757d !important;
+}
+
+/* Focus states */
+.form-control:focus {
+    color: #333 !important;
+    background-color: #fff !important;
+}
+</style>
+
+<div class="main-panel">
+    <div class="content-wrapper">
+        <div class="row">
+            <div class="row justify-content-center">
+                <div class="col-md-12 grid-margin stretch-card">
+                    <div class="card">
+                        <div class="card-body">
+                            <h4 class="card-title text-center mb-4">Add Timetable</h4>
+                            <form class="forms-sample" method="POST" action="{% url 'add_timetable' %}">
+                                {% csrf_token %}
+                                
+                                <!-- Academic Selection -->
+                                <div class="row">
+                                    <div class="col-md-4">
+                                        <div class="form-group">
+                                            <label for="batch" style="font-weight: bold;">Batch</label>
+                                            <select name="batch" id="batch" class="form-control" required>
+                                                <option value="" disabled selected>Select Batch</option>
+                                                {% for batch in batches %}
+                                                <option value="{{ batch.batch_id }}">{{ batch.batch_name }}</option>
+                                                {% endfor %}
+                                            </select>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <div class="form-group">
+                                            <label for="academic_year" style="font-weight: bold;">Academic Year</label>
+                                            <select name="academic_year" id="academic_year" class="form-control" required>
+                                                <option value="" disabled selected>Select Academic Year</option>
+                                                {% for year in academic_years %}
+                                                <option value="{{ year.academic_id }}" data-batch="{{ year.fk_batch_id }}">{{ year.academic_year }}</option>
+                                                {% endfor %}
+                                            </select>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <div class="form-group">
+                                            <label for="semester" style="font-weight: bold;">Semester</label>
+                                            <select name="semester" id="semester" class="form-control" required>
+                                                <option value="" disabled selected>Select Semester</option>
+                                                {% for semester_data in semesters %}
+                                                <option value="{{ semester_data.semester.semester_id }}"
+                                                    data-batch="{{ semester_data.batch_id }}">
+                                                    Semester {{ semester_data.semester.semester_number }}
+                                                </option>
+                                                {% endfor %}
+                                            </select>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Timetable Days Container -->
+                                <div class="mt-4">
+                                    <h5 class="mb-3">Schedule Days</h5>
+                                    <div id="days-container">
+                                        <!-- First Day Block (Default) -->
+                                        <div class="day-block border rounded p-3 mb-4 bg-light">
+                                            <!-- Day Row -->
+                                            <div class="row mb-3">
+                                                <div class="col-md-12">
+                                                    <div class="form-group">
+                                                        <label style="font-weight: bold;">Day of Week</label>
+                                                        <select name="day_of_week[]" class="form-control day-select" required onchange="updateDayLabel(this)">
+                                                            <option value="" disabled selected>Select Day</option>
+                                                            <option value="Monday">Monday</option>
+                                                            <option value="Tuesday">Tuesday</option>
+                                                            <option value="Wednesday">Wednesday</option>
+                                                            <option value="Thursday">Thursday</option>
+                                                            <option value="Friday">Friday</option>
+                                                            <option value="Saturday">Saturday</option>
+                                                            <option value="Sunday">Sunday</option>
+                                                        </select>
+                                                        <small class="text-muted">This day will apply to all hours below</small>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            
+                                            <!-- Hours Container -->
+                                            <div class="hours-container">
+                                                <h6 class="mb-2">Schedule Hours for <span class="day-label text-primary">this day</span></h6>
+                                                
+                                                <!-- First Hour Row -->
+                                                <div class="hour-row mb-2 d-flex align-items-center">
+                                                    <div class="col-md-3 me-2">
+                                                        <select name="hour[]" class="form-control" required>
+                                                            <option value="" disabled selected>Select Hour</option>
+                                                            <option value="1">1st Hour</option>
+                                                            <option value="2">2nd Hour</option>
+                                                            <option value="3">3rd Hour</option>
+                                                            <option value="4">4th Hour</option>
+                                                            <option value="5">5th Hour</option>
+                                                            <option value="6">6th Hour</option>
+                                                            <option value="7">7th Hour</option>
+                                                            <option value="8">8th Hour</option>
+                                                        </select>
+                                                    </div>
+                                                    <div class="col-md-4 me-2">
+                                                        <select name="subject[]" class="form-control subject-dropdown" required>
+                                                            <option value="" disabled selected>Select Subject</option>
+                                                            {% for subject in subjects %}
+                                                            <option value="{{ subject.subject_id }}" 
+                                                                    data-batch="{{ subject.fk_batch_id }}" 
+                                                                    data-semester="{{ subject.fk_semester_id }}"
+                                                                    class="subject-option">{{ subject.subject_name }}</option>
+                                                            {% endfor %}
+                                                        </select>
+                                                    </div>
+                                                    <div class="col-md-4 me-2">
+                                                        <select name="faculty[]" class="form-control" required>
+                                                            <option value="" disabled selected>Select Faculty</option>
+                                                            {% for faculty in faculty_list %}
+                                                            <option value="{{ faculty.user_id }}">{{ faculty.full_name }}</option>
+                                                            {% endfor %}
+                                                        </select>
+                                                    </div>
+                                                    <!-- Add More Hours Button -->
+                                                    <div class="text-center mt-1 me-1">
+                                                        <button type="button" class="btn btn-success btn-sm" 
+                                                            onclick="addHourRow(this)">
+                                                        <i class="ti-plus"></i>
+                                                        </button>
+                                                    </div>
+                                                    <div class="col-md-1">
+                                                        <button type="button" class="btn btn-danger btn-sm" 
+                                                                onclick="removeHourRow(this)">
+                                                        <i class="ti-minus"></i>
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            
+                                            
+                                            
+                                            
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Add More Days and Remove Day Buttons -->
+                                <div class="text-center mt-3">
+                                    <button type="button" class="btn btn-primary me-2" onclick="addDayBlock()">
+                                        <i class="ti-plus"></i> Add More Days
+                                    </button>
+                                    <button type="button" class="btn btn-danger btn-sm" 
+                                            onclick="removeDayBlock(this)">
+                                        <i class="ti-trash"></i> Remove Day
+                                    </button>
+                                </div>
+
+                                <br><br>
+                                <div class="text-center mt-4">
+                                    <button type="submit" class="btn btn-primary me-2">Save Timetable</button>
+                                    <button type="reset" class="btn btn-light">Cancel</button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+<script>
+function addDayBlock() {
+    const container = document.getElementById('days-container');
+    const existingDayBlocks = container.querySelectorAll('.day-block');
+    const nextDayNumber = existingDayBlocks.length;
+    
+    // Array of days in order
+    const daysOfWeek = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+    const nextDayName = daysOfWeek[nextDayNumber % 7]; // Use modulo to cycle through days
+    
+    const dayBlock = document.createElement('div');
+    dayBlock.className = 'day-block border rounded p-3 mb-4 bg-light';
+    dayBlock.innerHTML = `
+        <!-- Day Row -->
+        <div class="row mb-3">
+            <div class="col-md-12">
+                <div class="form-group">
+                    <label style="font-weight: bold;">Day of Week</label>
+                    <select name="day_of_week[]" class="form-control day-select" required onchange="updateDayLabel(this)">
+                        <option value="" disabled selected>Select Day</option>
+                        <option value="Monday">Monday</option>
+                        <option value="Tuesday">Tuesday</option>
+                        <option value="Wednesday">Wednesday</option>
+                        <option value="Thursday">Thursday</option>
+                        <option value="Friday">Friday</option>
+                        <option value="Saturday">Saturday</option>
+                        <option value="Sunday">Sunday</option>
+                    </select>
+                    <small class="text-muted">This day will apply to all hours below</small>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Hours Container -->
+        <div class="hours-container">
+            <h6 class="mb-2">Schedule Hours for <span class="day-label text-primary">this day</span></h6>
+            
+            <!-- First Hour Row -->
+            <div class="hour-row mb-2 d-flex align-items-center">
+                <div class="col-md-3 me-2">
+                    <select name="hour[]" class="form-control" required>
+                        <option value="" disabled selected>Select Hour</option>
+                        <option value="1">1st Hour</option>
+                        <option value="2">2nd Hour</option>
+                        <option value="3">3rd Hour</option>
+                        <option value="4">4th Hour</option>
+                        <option value="5">5th Hour</option>
+                        <option value="6">6th Hour</option>
+                        <option value="7">7th Hour</option>
+                        <option value="8">8th Hour</option>
+                    </select>
+                </div>
+                <div class="col-md-4 me-2">
+                    <select name="subject[]" class="form-control subject-dropdown" required>
+                        <option value="" disabled selected>Select Subject</option>
+                        {% for subject in subjects %}
+                        <option value="{{ subject.subject_id }}" 
+                                data-batch="{{ subject.fk_batch_id }}" 
+                                data-semester="{{ subject.fk_semester_id }}"
+                                class="subject-option">{{ subject.subject_name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-4 me-2">
+                    <select name="faculty[]" class="form-control" required>
+                        <option value="" disabled selected>Select Faculty</option>
+                        {% for faculty in faculty_list %}
+                        <option value="{{ faculty.user_id }}">{{ faculty.full_name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <!-- Add More Hours Button -->
+                <div class="text-center mt-1 me-1">
+                    <button type="button" class="btn btn-success btn-sm" 
+                        onclick="addHourRow(this)">
+                    <i class="ti-plus"></i>
+                    </button>
+                </div>
+                <div class="col-md-1">
+                    <button type="button" class="btn btn-danger btn-sm" 
+                            onclick="removeHourRow(this)">
+                        <i class="ti-minus"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    container.appendChild(dayBlock);
+    
+    // Auto-select the next day
+    const newDaySelect = dayBlock.querySelector('select[name="day_of_week[]"]');
+    newDaySelect.value = nextDayName;
+    
+    // Update the day label
+    updateDayLabel(newDaySelect);
+    
+    // Apply subject filtering to new dropdown - get current values from DOM
+    const batchSelect = document.getElementById('batch');
+    const semesterSelect = document.getElementById('semester');
+    filterSubjects(batchSelect.value, semesterSelect.value);
+}
+
+function updateDayLabel(daySelect) {
+    const dayBlock = daySelect.closest('.day-block');
+    const dayLabel = dayBlock.querySelector('.day-label');
+    const selectedDay = daySelect.value;
+    
+    if (selectedDay) {
+        dayLabel.textContent = selectedDay;
+        dayLabel.className = 'day-label text-primary fw-bold';
+    } else {
+        dayLabel.textContent = 'this day';
+        dayLabel.className = 'day-label text-primary';
+    }
+}
+
+function removeDayBlock(button) {
+    const container = document.getElementById('days-container');
+    
+    // Don't remove if it's the last day block
+    if (container.children.length > 1) {
+        // Remove the last day block
+        const lastDayBlock = container.lastElementChild;
+        lastDayBlock.remove();
+    } else {
+        alert('At least one day must be present!');
+    }
+}
+
+function addHourRow(button) {
+    const hoursContainer = button.closest('.day-block').querySelector('.hours-container');
+    const existingHourRows = hoursContainer.querySelectorAll('.hour-row');
+    const nextHourNumber = existingHourRows.length + 1;
+    
+    const hourRow = document.createElement('div');
+    hourRow.className = 'hour-row mb-2 d-flex align-items-center';
+    hourRow.innerHTML = `
+        <div class="col-md-3 me-2">
+            <select name="hour[]" class="form-control" required>
+                <option value="" disabled selected>Select Hour</option>
+                <option value="1">1st Hour</option>
+                <option value="2">2nd Hour</option>
+                <option value="3">3rd Hour</option>
+                <option value="4">4th Hour</option>
+                <option value="5">5th Hour</option>
+                <option value="6">6th Hour</option>
+                <option value="7">7th Hour</option>
+                <option value="8">8th Hour</option>
+            </select>
+        </div>
+        <div class="col-md-4 me-2">
+            <select name="subject[]" class="form-control subject-dropdown" required>
+                <option value="" disabled selected>Select Subject</option>
+                {% for subject in subjects %}
+                <option value="{{ subject.subject_id }}" 
+                        data-batch="{{ subject.fk_batch_id }}" 
+                        data-semester="{{ subject.fk_semester_id }}"
+                        class="subject-option">{{ subject.subject_name }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="col-md-4 me-2">
+            <select name="faculty[]" class="form-control" required>
+                <option value="" disabled selected>Select Faculty</option>
+                {% for faculty in faculty_list %}
+                <option value="{{ faculty.user_id }}">{{ faculty.full_name }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <!-- Add More Hours Button -->
+        <div class="text-center mt-1 me-1">
+            <button type="button" class="btn btn-success btn-sm" 
+                onclick="addHourRow(this)">
+            <i class="ti-plus"></i>
+            </button>
+        </div>
+        <div class="col-md-1">
+            <button type="button" class="btn btn-danger btn-sm" 
+                    onclick="removeHourRow(this)">
+                <i class="ti-minus"></i>
+            </button>
+        </div>
+    `;
+    
+    hoursContainer.appendChild(hourRow);
+    
+    // Auto-select the next hour
+    const newHourSelect = hourRow.querySelector('select[name="hour[]"]');
+    if (nextHourNumber <= 8) {
+        newHourSelect.value = nextHourNumber.toString();
+    }
+    
+    // Apply subject filtering to new dropdown
+    const batchSelect = document.getElementById('batch');
+    const semesterSelect = document.getElementById('semester');
+    filterSubjects(batchSelect.value, semesterSelect.value);
+}
+
+function removeHourRow(button) {
+    const hourRow = button.closest('.hour-row');
+    const hoursContainer = hourRow.closest('.hours-container');
+    
+    // Don't remove if it's the last hour row in this day
+    if (hoursContainer.querySelectorAll('.hour-row').length > 1) {
+        hourRow.remove();
+    } else {
+        alert('At least one hour must be present for each day!');
+    }
+}
+
+function filterSubjects(selectedBatch, selectedSemester) {
+    const allSubjectDropdowns = document.querySelectorAll('.subject-dropdown');
+    
+    allSubjectDropdowns.forEach(dropdown => {
+        const subjectOptions = dropdown.querySelectorAll('.subject-option');
+        const currentValue = dropdown.value;
+        
+        subjectOptions.forEach(option => {
+            const optionBatch = option.getAttribute('data-batch');
+            const optionSemester = option.getAttribute('data-semester');
+            
+            // Show subject only if both batch and semester match
+            if (optionBatch === selectedBatch && optionSemester === selectedSemester && selectedBatch !== '' && selectedSemester !== '') {
+                option.style.display = 'block';
+            } else {
+                option.style.display = 'none';
+            }
+        });
+        
+        // Only reset dropdown if it's empty or if current selection is no longer valid
+        if (currentValue === '') {
+            dropdown.value = '';
+        } else {
+            // Check if current selection is still valid (visible)
+            const currentOption = dropdown.querySelector(`option[value="${currentValue}"]`);
+            if (currentOption && currentOption.style.display === 'none') {
+                // Current selection is no longer valid, reset it
+                dropdown.value = '';
+            }
+        }
+    });
+}
+
+// Initialize filtering based on batch and academic year selection
+document.addEventListener('DOMContentLoaded', function() {
+    const batchSelect = document.getElementById('batch');
+    const academicYearSelect = document.getElementById('academic_year');
+    const semesterSelect = document.getElementById('semester');
+    
+    // Initially hide all academic years, semesters, and subjects
+    filterAcademicYears('');
+    filterSemesters('', '');
+    filterSubjects('', '');
+    
+    // Filter academic years when batch changes
+    batchSelect.addEventListener('change', function() {
+        const selectedBatch = this.value;
+        filterAcademicYears(selectedBatch);
+        filterSemesters(selectedBatch, academicYearSelect.value);
+        filterSubjects(selectedBatch, semesterSelect.value);
+    });
+    
+    // Filter semesters when academic year changes
+    academicYearSelect.addEventListener('change', function() {
+        const selectedBatch = batchSelect.value;
+        filterSemesters(selectedBatch, this.value);
+        filterSubjects(selectedBatch, semesterSelect.value);
+    });
+    
+    // Filter subjects when semester changes
+    semesterSelect.addEventListener('change', function() {
+        const selectedBatch = batchSelect.value;
+        filterSubjects(selectedBatch, this.value);
+    });
+    
+    function filterAcademicYears(selectedBatch) {
+        const academicYearOptions = academicYearSelect.querySelectorAll('option');
+        
+        academicYearOptions.forEach(option => {
+            if (option.value === '') {
+                option.style.display = 'block';
+            } else {
+                // Get batch data from academic years
+                const optionBatch = option.getAttribute('data-batch');
+                if (optionBatch === selectedBatch && selectedBatch !== '') {
+                    option.style.display = 'block';
+                } else {
+                    option.style.display = 'none';
+                }
+            }
+        });
+        
+        academicYearSelect.value = '';
+    }
+    
+    function filterSemesters(selectedBatch, selectedAcademicYear) {
+        const semesterOptions = semesterSelect.querySelectorAll('option');
+        
+        semesterOptions.forEach(option => {
+            if (option.value === '') {
+                option.style.display = 'block';
+            } else {
+                const optionBatch = option.getAttribute('data-batch');
+                // Show semester only if both batch and academic year are selected
+                if (optionBatch === selectedBatch && selectedBatch !== '' && selectedAcademicYear !== '') {
+                    option.style.display = 'block';
+                } else {
+                    option.style.display = 'none';
+                }
+            }
+        });
+        
+        semesterSelect.value = '';
+    }
+});
+</script>
+
+{% endblock %}

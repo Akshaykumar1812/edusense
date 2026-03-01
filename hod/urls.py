@@ -18,4 +18,7 @@ urlpatterns = [
 
     path('student_attendance/',views.student_attendance,name="student_attendance"),
 
+    path('add_timetable/',views.add_timetable,name="add_timetable"),
+    path('list_timetable/',views.list_timetable,name="list_timetable"),
+
 ]

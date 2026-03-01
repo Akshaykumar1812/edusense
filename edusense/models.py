@@ -296,6 +296,7 @@ class Subjects(models.Model):
 class Timetable(models.Model):
     timetable_id = models.AutoField(primary_key=True)
     fk_department_id = models.IntegerField()
+    fk_academic_id = models.IntegerField()
     fk_semester_id = models.IntegerField()
     fk_subject_id = models.IntegerField()
     fk_faculty_id = models.IntegerField()
