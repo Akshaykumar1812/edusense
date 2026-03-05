@@ -1,0 +1,155 @@
+{% extends 'faculty/faculty_layout.html' %}
+{% load static %}
+{% block content %}
+
+<div class="main-panel">
+    <div class="content-wrapper">
+        <div class="row">
+            <div class="row justify-content-center">
+                <div class="col-md-12 grid-margin stretch-card">
+                    <div class="card">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between align-items-center mb-4">
+                                <h4 class="card-title text mb-4">Timetable</h4>
+                            </div>
+                            <hr>
+                            <!-- Timetable Grid Display -->
+                            {% if has_data %}
+                                <div class="table-responsive mt-4">
+                                    <table class="table table-bordered table-striped timetable-grid">
+                                        <thead class="table-primary">
+                                            <tr>
+                                                <th class="day-column">Day / Hour</th>
+                                                {% for hour in hours %}
+                                                <th class="hour-column">{{ hour }}{% if hour == 1 %}st{% elif hour == 2 %}nd{% elif hour == 3 %}rd{% else %}th{% endif %}</th>
+                                                {% endfor %}
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {% for row in timetable_flat %}
+                                            <tr>
+                                                <td class="day-cell">
+                                                    <strong>{{ row.day }}</strong>
+                                                </td>
+                                                {% for hour_data in row.hours %}
+                                                <td class="timetable-cell">
+                                                    {% if hour_data.subject %}
+                                                        <div class="subject-name">
+                                                            {{ hour_data.subject }}
+                                                        </div>
+                                                        <div class="batch-semester text-muted small">
+                                                            {{ hour_data.batch }} | {{ hour_data.semester }}
+                                                        </div>
+                                                    {% else %}
+                                                        <div class="empty-cell">-</div>
+                                                    {% endif %}
+                                                </td>
+                                                {% endfor %}
+                                            </tr>
+                                            {% endfor %}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            {% else %}
+                                <div class="text-center mt-4">
+                                    <p class="text-muted">No timetable entries found for your department.</p>
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+<style>
+.timetable-grid {
+    font-size: 12px;
+    table-layout: fixed;
+}
+
+.timetable-grid th,
+.timetable-grid td {
+    text-align: center;
+    vertical-align: middle;
+    padding: 25px 4px;
+    border: 1px solid #dee2e6;
+}
+
+.day-column {
+    width: 100px;
+    font-weight: bold;
+    background-color: #f8f9fa;
+}
+
+.hour-column {
+    width: 120px;
+    font-weight: bold;
+    background-color: #f8f9fa;
+}
+
+.day-cell {
+    background-color: #f8f9fa;
+    font-weight: bold;
+    width: 100px;
+}
+
+.timetable-cell {
+    min-height: 60px;
+    max-width: 120px;
+}
+
+.subject-name {
+    font-weight: 600;
+    color: #2c3e50;
+    margin-bottom: 10px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.batch-semester {
+    font-size: 15px;
+    color: #6c757d;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.empty-cell {
+    color: #dee2e6;
+    font-style: italic;
+}
+
+@media (max-width: 1200px) {
+    .timetable-grid {
+        font-size: 11px;
+    }
+    .hour-column {
+        width: 100px;
+    }
+    .timetable-cell {
+        min-height: 50px;
+        max-width: 100px;
+    }
+}
+
+@media (max-width: 768px) {
+    .timetable-grid {
+        font-size: 10px;
+    }
+    .day-column {
+        width: 80px;
+    }
+    .hour-column {
+        width: 80px;
+    }
+    .timetable-cell {
+        min-height: 40px;
+        max-width: 80px;
+        padding: 4px 2px;
+    }
+}
+</style>
+
+{% endblock %}

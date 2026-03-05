@@ -14,21 +14,25 @@
                             <form class="forms-sample" method="POST" action="">
                                 {% csrf_token %}
                                 <div class="form-group">
-                                    <label for="academic_year">Academic Year</label>
-                                    <select name="academic_year" class="form-control" required>
-                                        <option value="" disabled selected>--Select Academic Year--</option>
-                                        {% for year in academic_years %}
-                                        <option value="{{ year.academic_year }}">{{ year.academic_year }}</option>
+                                    <label for="batch">Batch</label>
+                                    <select name="batch" class="form-control" required id="batch_select">
+                                        <option value="" disabled selected>--Select Batch--</option>
+                                        {% for batch in batches %}
+                                        <option value="{{ batch.batch_id }}">{{ batch.batch_name }}</option>
                                         {% endfor %}
                                     </select>
                                 </div>
                                 <div class="form-group">
+                                    <label for="academic_year">Academic Year</label>
+                                    <select name="academic_year" class="form-control" required
+                                        id="academic_year_select">
+                                        <option value="" disabled selected>--Select Academic Year--</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
                                     <label for="semester">Semester</label>
-                                    <select name="semester" class="form-control" required>
+                                    <select name="semester" class="form-control" required id="semester_select">
                                         <option value="" disabled selected>--Select Semester--</option>
-                                        {% for sem in semesters %}
-                                        <option value="{{ sem.semester_id }}">Semester {{ sem.semester_number }}</option>
-                                        {% endfor %}
                                     </select>
                                 </div>
                                 <div class="text-center mt-4">
@@ -47,21 +51,47 @@
                     <div class="card-body">
                         <h4 class="card-title">Students List</h4>
                         <p class="card-description">
-                            <strong></strong> {{ faculty_department.department_name }} | 
-                            <strong></strong> {{ request.POST.academic_year }} | 
+                            <strong></strong> {{ faculty_department.department_name }} |
+                            <strong></strong> {% if selected_batch %}{{ selected_batch.batch_name }}{% endif %} |
+                            <strong></strong> {{ request.POST.academic_year }} |
                             <strong></strong> Sem {{ selected_semester_obj.semester_number }}
                         </p>
+                        <br>
 
                         <form method="POST" action="">
                             {% csrf_token %}
+                            <input type="hidden" name="batch" value="{{ request.POST.batch }}">
                             <input type="hidden" name="academic_year" value="{{ request.POST.academic_year }}">
                             <input type="hidden" name="semester" value="{{ request.POST.semester }}">
-                            
-                            <div class="form-group mb-4">
-                                <label for="attendance_date" class="form-label"><strong>Attendance Date</strong></label>
-                                <input type="date" name="attendance_date" class="form-control form-control-sm" style="width: 200px;" required>
+                            <input type="hidden" name="subject" value="{{ request.POST.subject }}">
+                            <input type="hidden" name="hours" value="{{ request.POST.hours }}">
+
+                            <div class="row mb-3">
+                                <div class="col-md-4">
+                                    <label for="attendance_date" class="form-label"><strong>Attendance Date</strong></label>
+                                    <input type="date" name="attendance_date" class="form-control form-control-sm" required>
+                                </div>
+                                <div class="col-md-4">
+                                    <label for="subject" class="form-label"><strong>Subject</strong></label>
+                                    <select name="subject" class="form-control form-control-sm" id="subject_select" required>
+                                        <option value="" disabled selected>--Select Subject--</option>
+                                        {% for subject in subjects %}
+                                        <option value="{{ subject.subject_id }}">{{ subject.subject_name }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                                <div class="col-md-4">
+                                    <label for="hours" class="form-label"><strong>Hours</strong></label>
+                                    <select name="hours" class="form-control form-control-sm" id="hours_select" required>
+                                        <option value="" disabled selected>--Select Hours--</option>
+                                        {% for hour in hours %}
+                                        <option value="{{ hour }}">{{ hour }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
                             </div>
-                            
+                            <br>
+
                             <div class="table-responsive">
                                 <table class="table table-striped">
                                     <thead>
@@ -77,25 +107,33 @@
                                             <td>{{ student.full_name }}</td>
                                             <td>
                                                 <div class="form-check form-check-inline">
-                                                    <input class="form-check-input" type="radio" name="attendance_{{ student.user_id }}" id="present_{{ student.user_id }}" value="Present">
-                                                    <label class="form-check-label" for="present_{{ student.user_id }}">Present</label>
+                                                    <input class="form-check-input" type="radio"
+                                                        name="attendance_{{ student.user_id }}"
+                                                        id="present_{{ student.user_id }}" value="Present">
+                                                    <label class="form-check-label"
+                                                        for="present_{{ student.user_id }}">Present</label>
                                                 </div>
                                                 <div class="form-check form-check-inline">
-                                                    <input class="form-check-input" type="radio" name="attendance_{{ student.user_id }}" id="absent_{{ student.user_id }}" value="Absent">
-                                                    <label class="form-check-label" for="absent_{{ student.user_id }}">Absent</label>
+                                                    <input class="form-check-input" type="radio"
+                                                        name="attendance_{{ student.user_id }}"
+                                                        id="absent_{{ student.user_id }}" value="Absent">
+                                                    <label class="form-check-label"
+                                                        for="absent_{{ student.user_id }}">Absent</label>
                                                 </div>
                                             </td>
                                             <td>
-                                                <input type="text" name="remarks_{{ student.user_id }}" class="form-control" placeholder="Optional remarks">
+                                                <input type="text" name="remarks_{{ student.user_id }}"
+                                                    class="form-control" placeholder="Optional remarks">
                                             </td>
                                         </tr>
                                         {% endfor %}
                                     </tbody>
                                 </table>
                             </div>
-                            
+
                             <div class="text-center mt-4">
-                                <button type="submit" name="submit_attendance" class="btn btn-success me-2">Submit Attendance</button>
+                                <button type="submit" name="submit_attendance" class="btn btn-success me-2">Submit
+                                    Attendance</button>
                                 <button type="reset" class="btn btn-light">Cancel</button>
                             </div>
                         </form>
@@ -106,5 +144,76 @@
 
         </div>
     </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const batchSelect = document.getElementById('batch_select');
+            const academicYearSelect = document.getElementById('academic_year_select');
+            const semesterSelect = document.getElementById('semester_select');
+            
+            // Debug: Check if elements exist
+            console.log('Batch Select:', batchSelect);
+            console.log('Academic Year Select:', academicYearSelect);
+            console.log('Semester Select:', semesterSelect);
+            
+            // Store all data from Django
+            const allAcademicYears = JSON.parse('{{ academic_years_data|escapejs }}');
+            const allSemesters = JSON.parse('{{ semesters_data|escapejs }}');
+            
+            // Debug: Check if data is loaded
+            console.log('Academic Years Data:', allAcademicYears);
+            console.log('Semesters Data:', allSemesters);
+            
+            batchSelect.addEventListener('change', function() {
+                const selectedBatch = this.value;
+                console.log('Batch selected:', selectedBatch);
+                
+                // Clear academic year and semester dropdowns
+                academicYearSelect.innerHTML = '<option value="" disabled selected>--Select Academic Year--</option>';
+                semesterSelect.innerHTML = '<option value="" disabled selected>--Select Semester--</option>';
+                
+                if (selectedBatch) {
+                    // Filter academic years for selected batch
+                    const filteredYears = allAcademicYears.filter(year => year.fk_batch_id == selectedBatch);
+                    console.log('Filtered Academic Years:', filteredYears);
+                    filteredYears.forEach(year => {
+                        const option = document.createElement('option');
+                        option.value = year.academic_year;
+                        option.textContent = year.academic_year;
+                        academicYearSelect.appendChild(option);
+                    });
+                }
+            });
+            
+            academicYearSelect.addEventListener('change', function() {
+                const selectedBatch = batchSelect.value;
+                const selectedYear = this.value;
+                console.log('Academic Year selected:', selectedYear, 'Batch:', selectedBatch);
+                
+                // Clear semester dropdown
+                semesterSelect.innerHTML = '<option value="" disabled selected>--Select Semester--</option>';
+                
+                if (selectedBatch && selectedYear) {
+                    // Find academic year object
+                    const academicYear = allAcademicYears.find(year => 
+                        year.fk_batch_id == selectedBatch && year.academic_year == selectedYear
+                    );
+                    console.log('Found Academic Year:', academicYear);
+                    
+                    if (academicYear) {
+                        // Filter semesters for this academic year
+                        const filteredSemesters = allSemesters.filter(sem => sem.fk_academic_id == academicYear.academic_id);
+                        console.log('Filtered Semesters:', filteredSemesters);
+                        filteredSemesters.forEach(sem => {
+                            const option = document.createElement('option');
+                            option.value = sem.semester_id;
+                            option.textContent = 'Semester ' + sem.semester_number;
+                            semesterSelect.appendChild(option);
+                        });
+                    }
+                }
+            });
+        });
+    </script>
 
     {% endblock %}

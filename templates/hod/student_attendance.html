@@ -14,20 +14,41 @@
                             <form class="forms-sample" method="POST" action="">
                                 {% csrf_token %}
                                 <div class="form-group">
+                                    <label for="batch">Batch</label>
+                                    <select name="batch" class="form-control" required id="batch_select" onchange="handleBatchChange()">
+                                        <option value="" disabled selected>--Select Batch--</option>
+                                        {% for batch in batches %}
+                                        <option value="{{ batch.batch_id }}" 
+                                                {% if request.POST.batch == batch.batch_id|stringformat:"s" %}selected{% endif %}>
+                                            {{ batch.batch_name }}
+                                        </option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                                <div class="form-group">
                                     <label for="academic_year">Academic Year</label>
-                                    <select name="academic_year" class="form-control" required>
+                                    <select name="academic_year" class="form-control" required id="academic_year_select" onchange="filterSemesters()">
                                         <option value="" disabled selected>--Select Academic Year--</option>
                                         {% for year in academic_years %}
-                                        <option value="{{ year.academic_year }}">{{ year.academic_year }}</option>
+                                        <option value="{{ year.academic_year }}" 
+                                                data-batch="{{ year.fk_batch_id }}"
+                                                data-academic-id="{{ year.academic_id }}"
+                                                {% if request.POST.academic_year == year.academic_year %}selected{% endif %}>
+                                            {{ year.academic_year }}
+                                        </option>
                                         {% endfor %}
                                     </select>
                                 </div>
                                 <div class="form-group">
                                     <label for="semester">Semester</label>
-                                    <select name="semester" class="form-control" required>
+                                    <select name="semester" class="form-control" required id="semester_select">
                                         <option value="" disabled selected>--Select Semester--</option>
                                         {% for sem in semesters %}
-                                        <option value="{{ sem.semester_id }}">Semester {{ sem.semester_number }}</option>
+                                        <option value="{{ sem.semester_id }}" 
+                                                data-academic="{{ sem.fk_academic_id }}"
+                                                {% if request.POST.semester == sem.semester_id|stringformat:"s" %}selected{% endif %}>
+                                            Semester {{ sem.semester_number }}
+                                        </option>
                                         {% endfor %}
                                     </select>
                                 </div>
@@ -48,6 +69,7 @@
                         <h4 class="card-title">Student Attendance Summary</h4>
                         <p class="card-description">
                             <strong></strong> {{ hod_department.department_name }} | 
+                            <strong></strong> {% if selected_batch_obj %}{{ selected_batch_obj.batch_name }}{% endif %} |
                             <strong></strong> {{ request.POST.academic_year }} | 
                             <strong></strong> Sem {{ selected_semester_obj.semester_number }}
                         </p>
@@ -90,4 +112,111 @@
         </div>
     </div>
 
-    {% endblock %}
+<script>
+function handleBatchChange() {
+    const batchSelect = document.getElementById('batch_select');
+    const academicYearSelect = document.getElementById('academic_year_select');
+    const semesterSelect = document.getElementById('semester_select');
+    const selectedBatch = batchSelect.value;
+    
+    // Get all academic year options
+    const academicYearOptions = academicYearSelect.querySelectorAll('option');
+    
+    // Store current academic year selection
+    const currentAcademicYear = academicYearSelect.value;
+    
+    // Filter academic years based on selected batch
+    academicYearOptions.forEach(option => {
+        const optionBatch = option.getAttribute('data-batch');
+        
+        if (selectedBatch === '') {
+            // No batch selected, show only placeholder
+            option.style.display = option.value === '' ? 'block' : 'none';
+        } else {
+            // Batch selected, show matching academic years
+            if (optionBatch === selectedBatch || option.value === '') {
+                option.style.display = 'block';
+            } else {
+                option.style.display = 'none';
+            }
+        }
+    });
+    
+    // Reset academic year selection if current selection is no longer valid
+    let newAcademicYear = currentAcademicYear;
+    if (currentAcademicYear) {
+        const currentOption = academicYearSelect.querySelector(`option[value="${currentAcademicYear}"]`);
+        if (currentOption && currentOption.style.display !== 'none') {
+            academicYearSelect.value = currentAcademicYear;
+        } else {
+            academicYearSelect.value = '';
+            newAcademicYear = '';  // Academic year was reset
+        }
+    }
+    
+    // Always filter semesters when batch changes
+    // This ensures semesters update even if academic year was reset or changed
+    filterSemesters();
+}
+
+function filterSemesters() {
+    const batchSelect = document.getElementById('batch_select');
+    const academicYearSelect = document.getElementById('academic_year_select');
+    const semesterSelect = document.getElementById('semester_select');
+    const selectedBatch = batchSelect.value;
+    const selectedAcademic = academicYearSelect.value;
+    
+    // Get all semester options
+    const semesterOptions = semesterSelect.querySelectorAll('option');
+    
+    // Store current semester selection
+    const currentSemester = semesterSelect.value;
+    
+    // Find the academic year ID for the selected academic year
+    let selectedAcademicId = null;
+    if (selectedBatch && selectedAcademic) {
+        // Find the academic year option that matches the selected academic year and batch
+        const selectedAcademicOption = academicYearSelect.querySelector(`option[value="${selectedAcademic}"][data-batch="${selectedBatch}"]`);
+        if (selectedAcademicOption) {
+            // Get the actual academic_id from the data-academic-id attribute
+            selectedAcademicId = selectedAcademicOption.getAttribute('data-academic-id');
+        }
+    }
+    
+    // Filter semesters based on selected batch and academic year
+    semesterOptions.forEach(option => {
+        if (selectedBatch === '' || selectedAcademic === '') {
+            // No batch or academic year selected, show only placeholder
+            option.style.display = option.value === '' ? 'block' : 'none';
+        } else {
+            // Both batch and academic year selected, filter by academic ID
+            const optionAcademicId = option.getAttribute('data-academic');
+            
+            // Show semester if its academic_id matches the selected academic year's academic_id
+            if (optionAcademicId === selectedAcademicId || option.value === '') {
+                option.style.display = 'block';
+            } else {
+                option.style.display = 'none';
+            }
+        }
+    });
+    
+    // Only reset semester selection if it's no longer visible
+    if (currentSemester) {
+        const currentOption = semesterSelect.querySelector(`option[value="${currentSemester}"]`);
+        if (currentOption && currentOption.style.display !== 'none') {
+            semesterSelect.value = currentSemester; // Keep current selection if still valid
+        } else {
+            semesterSelect.value = '';
+        }
+    }
+}
+
+// Initialize filters on page load
+document.addEventListener('DOMContentLoaded', function() {
+    // Run filtering immediately on page load
+    handleBatchChange();
+});
+</script>
+
+{% endblock %}

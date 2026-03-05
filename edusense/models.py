@@ -21,9 +21,14 @@ class AcademicYears(models.Model):
 class AttendanceRecords(models.Model):
     attendance_id = models.AutoField(primary_key=True)
     fk_user_id = models.IntegerField()
+    fk_batch_id = models.IntegerField()
+    fk_academic_id = models.IntegerField()
+    fk_semester_id = models.IntegerField()
+    fk_subject_id = models.IntegerField()
     fk_leave_id = models.IntegerField()
     decision = models.CharField(max_length=50)
     decision_date = models.DateField()
+    hours = models.IntegerField()
     remarks = models.TextField()
 
     class Meta:
@@ -34,6 +39,7 @@ class AttendanceRecords(models.Model):
 class AttendanceSummary(models.Model):
     summary_id = models.AutoField(primary_key=True)
     fk_student_id = models.IntegerField()
+    fk_semester_id = models.IntegerField()
     total_classes = models.IntegerField()
     attended_classes = models.IntegerField()
     total_percentage = models.DecimalField(max_digits=5, decimal_places=2)

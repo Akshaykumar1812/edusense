@@ -14,21 +14,24 @@
                             <form class="forms-sample" method="POST" action="">
                                 {% csrf_token %}
                                 <div class="form-group">
-                                    <label for="academic_year">Academic Year</label>
-                                    <select name="academic_year" class="form-control" required>
-                                        <option value="" disabled selected>--Select Academic Year--</option>
-                                        {% for year in academic_years %}
-                                        <option value="{{ year.academic_year }}">{{ year.academic_year }}</option>
+                                    <label for="batch">Batch</label>
+                                    <select name="batch" class="form-control" required id="batch_select">
+                                        <option value="" disabled selected>--Select Batch--</option>
+                                        {% for batch in batches %}
+                                        <option value="{{ batch.batch_id }}">{{ batch.batch_name }}</option>
                                         {% endfor %}
                                     </select>
                                 </div>
                                 <div class="form-group">
+                                    <label for="academic_year">Academic Year</label>
+                                    <select name="academic_year" class="form-control" required id="academic_year_select">
+                                        <option value="" disabled selected>--Select Academic Year--</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
                                     <label for="semester">Semester</label>
-                                    <select name="semester" class="form-control" required>
+                                    <select name="semester" class="form-control" required id="semester_select">
                                         <option value="" disabled selected>--Select Semester--</option>
-                                        {% for sem in semesters %}
-                                        <option value="{{ sem.semester_id }}">Semester {{ sem.semester_number }}</option>
-                                        {% endfor %}
                                     </select>
                                 </div>
                                 <div class="form-group mb-4">
@@ -52,6 +55,7 @@
                         <h4 class="card-title">Attendance Records</h4>
                         <p class="card-description">
                             <strong></strong> {{ faculty_department.department_name }} | 
+                            <strong></strong> {% if selected_batch %}{{ selected_batch.batch_name }}{% endif %} |
                             <strong></strong> {{ request.POST.academic_year }} | 
                             <strong></strong> Sem {{ selected_semester_obj.semester_number }} | 
                             <strong>Date:</strong> {{ selected_date }}
@@ -61,6 +65,7 @@
                             <table class="table table-striped">
                                 <thead>
                                     <tr>
+                                        <th>S.No</th>
                                         <th>Student Name</th>
                                         <th>Attendance</th>
                                         <th>Remarks</th>
@@ -70,6 +75,7 @@
                                 <tbody>
                                     {% for record in attendance_records %}
                                     <tr>
+                                        <td>{{ forloop.counter }}</td>
                                         <td>{{ record.student.full_name }}</td>
                                         <td>
                                             {% if record.attendance %}
@@ -83,7 +89,7 @@
                                         <td>{{ record.attendance.remarks|default:"-" }}</td>
                                         <td>
                                             {% if record.attendance %}
-                                                <a href="{% url 'edit_attendance' record.attendance_id %}" class="btn btn-success me-2">Edit</a> 
+                                                <a href="{% url 'edit_attendance' record.attendance_id %}" class="btn btn-warning me-2">Edit</a> 
                                                 <!-- <a href="#" class="btn btn-danger me-2">Delete</a> -->
                                             {% else %}
                                                 -
@@ -101,5 +107,62 @@
 
         </div>
     </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const batchSelect = document.getElementById('batch_select');
+            const academicYearSelect = document.getElementById('academic_year_select');
+            const semesterSelect = document.getElementById('semester_select');
+            
+            // Store all data from Django
+            const allAcademicYears = JSON.parse('{{ academic_years_data|escapejs }}');
+            const allSemesters = JSON.parse('{{ semesters_data|escapejs }}');
+            
+            batchSelect.addEventListener('change', function() {
+                const selectedBatch = this.value;
+                
+                // Clear academic year and semester dropdowns
+                academicYearSelect.innerHTML = '<option value="" disabled selected>--Select Academic Year--</option>';
+                semesterSelect.innerHTML = '<option value="" disabled selected>--Select Semester--</option>';
+                
+                if (selectedBatch) {
+                    // Filter academic years for selected batch
+                    const filteredYears = allAcademicYears.filter(year => year.fk_batch_id == selectedBatch);
+                    filteredYears.forEach(year => {
+                        const option = document.createElement('option');
+                        option.value = year.academic_year;
+                        option.textContent = year.academic_year;
+                        academicYearSelect.appendChild(option);
+                    });
+                }
+            });
+            
+            academicYearSelect.addEventListener('change', function() {
+                const selectedBatch = batchSelect.value;
+                const selectedYear = this.value;
+                
+                // Clear semester dropdown
+                semesterSelect.innerHTML = '<option value="" disabled selected>--Select Semester--</option>';
+                
+                if (selectedBatch && selectedYear) {
+                    // Find academic year object
+                    const academicYear = allAcademicYears.find(year => 
+                        year.fk_batch_id == selectedBatch && year.academic_year == selectedYear
+                    );
+                    
+                    if (academicYear) {
+                        // Filter semesters for this academic year
+                        const filteredSemesters = allSemesters.filter(sem => sem.fk_academic_id == academicYear.academic_id);
+                        filteredSemesters.forEach(sem => {
+                            const option = document.createElement('option');
+                            option.value = sem.semester_id;
+                            option.textContent = 'Semester ' + sem.semester_number;
+                            semesterSelect.appendChild(option);
+                        });
+                    }
+                }
+            });
+        });
+    </script>
 
     {% endblock %}

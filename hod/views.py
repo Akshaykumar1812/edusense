@@ -245,35 +245,78 @@ def delete_subject(request, subject_id):
     subject.delete()
     return redirect('list_subject')
 
-
 def student_attendance(request):
     username = request.session['email']
     hod = models.Users.objects.get(email=username)
     hod_department_id = hod.fk_department_id
     hod_department = models.Departments.objects.get(department_id=hod_department_id)
     
-    # Get data for dropdowns
-    academic_years = models.AcademicYears.objects.filter(fk_department_id=hod_department_id).values('academic_year').distinct()
-    semesters = models.Semesters.objects.filter(fk_department_id=hod_department_id)
+    # Get all batches for HOD's department
+    batches = models.Batches.objects.filter(fk_department_id=hod_department_id)
+    
+    # Get all academic years for HOD's department
+    academic_years = models.AcademicYears.objects.filter(fk_batch_id__in=batches.values_list('batch_id', flat=True))
+    
+    # Get all semesters for HOD's department
+    semesters = models.Semesters.objects.all()
+    
+    # Handle filtering
+    selected_batch = request.POST.get('batch', '')
+    selected_academic = request.POST.get('academic_year', '')
+    
+    # Filter semesters based on selections
+    if selected_batch and selected_academic:
+        semesters = semesters.filter(
+            fk_academic_id__in=academic_years.filter(
+                fk_batch_id=selected_batch,
+                academic_year=selected_academic
+            ).values_list('academic_id', flat=True)
+        )
+    elif selected_batch:
+        semesters = semesters.filter(
+            fk_academic_id__in=academic_years.filter(
+                fk_batch_id=selected_batch
+            ).values_list('academic_id', flat=True)
+        )
+    elif selected_academic:
+        semesters = semesters.filter(
+            fk_academic_id__in=academic_years.filter(
+                academic_year=selected_academic
+            ).values_list('academic_id', flat=True)
+        )
+    
+    # Order by academic year and semester
+    semesters = semesters.order_by('fk_academic_id', 'semester_number')
     
     attendance_summaries = None
     selected_semester_obj = None
+    selected_batch_obj = None
     
     if request.method == "POST":
+        batch_id = request.POST.get('batch')
         academic_year = request.POST.get('academic_year')
         semester_id = request.POST.get('semester')
+        
+        # Get selected batch object for display
+        selected_batch_obj = None
+        if batch_id:
+            try:
+                selected_batch_obj = models.Batches.objects.get(batch_id=batch_id)
+            except models.Batches.DoesNotExist:
+                selected_batch_obj = None
         
         # Get selected semester object for display
         if semester_id:
             selected_semester_obj = models.Semesters.objects.get(semester_id=semester_id)
         
-        # Get students matching the criteria
+        # Get students matching criteria
         students = models.Users.objects.filter(
             role='student',
             fk_department_id=hod_department_id,
+            fk_batch_id=batch_id,
             fk_academic_id__in=models.AcademicYears.objects.filter(
                 academic_year=academic_year,
-                fk_department_id=hod_department_id
+                fk_batch_id=batch_id
             ).values_list('academic_id', flat=True),
             fk_semester_id=semester_id
         ).order_by('full_name')
@@ -294,11 +337,12 @@ def student_attendance(request):
         'attendance_summaries': attendance_summaries,
         'academic_years': academic_years,
         'semesters': semesters,
+        'batches': batches,
         'hod_department': hod_department,
-        'selected_semester_obj': selected_semester_obj
+        'selected_semester_obj': selected_semester_obj,
+        'selected_batch_obj': selected_batch_obj
     }
     return render(request, 'hod/student_attendance.html', context)
-
 
 def add_timetable(request):
     username = request.session['email']
@@ -385,24 +429,10 @@ def add_timetable(request):
     # Get academic years for HOD's department
     academic_years = models.AcademicYears.objects.filter(fk_batch_id__in=batches.values_list('batch_id', flat=True))
     
-    # Get all semesters for template with batch mapping
-    semesters = []
-    for batch in batches:
-        batch_academic_years = models.AcademicYears.objects.filter(fk_batch_id=batch.batch_id)
-        batch_semesters = models.Semesters.objects.filter(fk_academic_id__in=batch_academic_years.values_list('academic_id', flat=True))
-        
-        # Get unique semester numbers for this batch
-        unique_semesters = {}
-        for semester in batch_semesters:
-            if semester.semester_number not in unique_semesters:
-                unique_semesters[semester.semester_number] = semester
-        
-        # Add unique semesters to list
-        for semester_number, semester in unique_semesters.items():
-            semesters.append({
-                'semester': semester,
-                'batch_id': batch.batch_id
-            })
+    # Get all semesters for HOD's department
+    semesters = models.Semesters.objects.filter(
+        fk_academic_id__in=academic_years.values_list('academic_id', flat=True)
+    ).order_by('fk_academic_id', 'semester_number')
     
     # Get subjects for HOD's department
     subjects = models.Subjects.objects.filter(fk_batch_id__in=batches.values_list('batch_id', flat=True))
@@ -433,8 +463,11 @@ def list_timetable(request):
     # Get batches for HOD's department
     batches = models.Batches.objects.filter(fk_department_id=hod_department_id)
     
-    # Get academic years for HOD's department
-    academic_years = models.AcademicYears.objects.filter(fk_batch_id__in=batches.values_list('batch_id', flat=True))
+    # Get academic years - filtered by selected batch if available, otherwise all for department
+    if selected_batch:
+        academic_years = models.AcademicYears.objects.filter(fk_batch_id=selected_batch)
+    else:
+        academic_years = models.AcademicYears.objects.filter(fk_batch_id__in=batches.values_list('batch_id', flat=True))
     
     # Get all semesters for template with batch and academic year mapping
     semesters = []
@@ -458,6 +491,8 @@ def list_timetable(request):
     # Only process timetable data if filters are applied
     timetable_flat = []
     has_data = False
+    days_of_week = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
+    hours = range(1, 8)  # Default hours
     
     if selected_batch and selected_academic and selected_semester:
         # Filter timetable entries
@@ -537,8 +572,8 @@ def list_timetable(request):
     
     context = {
         'timetable_flat': timetable_flat,
-        'days_of_week': days_of_week if selected_batch and selected_academic and selected_semester else ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'],
-        'hours': hours if selected_batch and selected_academic and selected_semester else range(1, 8),  # Dynamic or fallback hours
+        'days_of_week': days_of_week,
+        'hours': hours,
         'batches': batches,
         'academic_years': academic_years,
         'semesters': semesters,
@@ -716,3 +751,6 @@ def delete_student(request, user_id):
         return redirect('faculty_students')
     
     return render(request, 'hod/faculty_students.html', context)
+
+def update_semester(request):
+    return render(request,'hod/update_semester.html')

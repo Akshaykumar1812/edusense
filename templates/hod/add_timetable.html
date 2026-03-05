@@ -70,11 +70,8 @@
                                             <label for="semester" style="font-weight: bold;">Semester</label>
                                             <select name="semester" id="semester" class="form-control" required>
                                                 <option value="" disabled selected>Select Semester</option>
-                                                {% for semester_data in semesters %}
-                                                <option value="{{ semester_data.semester.semester_id }}"
-                                                    data-batch="{{ semester_data.batch_id }}">
-                                                    Semester {{ semester_data.semester.semester_number }}
-                                                </option>
+                                                {% for sem in semesters %}
+                                                <option value="{{ sem.semester_id }}" data-academic="{{ sem.fk_academic_id }}">Semester {{ sem.semester_number }}</option>
                                                 {% endfor %}
                                             </select>
                                         </div>
@@ -495,9 +492,9 @@ document.addEventListener('DOMContentLoaded', function() {
             if (option.value === '') {
                 option.style.display = 'block';
             } else {
-                const optionBatch = option.getAttribute('data-batch');
-                // Show semester only if both batch and academic year are selected
-                if (optionBatch === selectedBatch && selectedBatch !== '' && selectedAcademicYear !== '') {
+                const optionAcademicId = option.getAttribute('data-academic');
+                // Show semester only if its academic_id matches the selected academic year
+                if (optionAcademicId === selectedAcademicYear && selectedAcademicYear !== '') {
                     option.style.display = 'block';
                 } else {
                     option.style.display = 'none';

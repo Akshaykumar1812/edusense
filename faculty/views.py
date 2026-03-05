@@ -185,77 +185,149 @@ def mark_attendance(request):
     faculty_department_id = faculty.fk_department_id
     faculty_department = models.Departments.objects.get(department_id=faculty_department_id)
     
-    # Get data for dropdowns
-    academic_years = models.AcademicYears.objects.filter(fk_department_id=faculty_department_id).values('academic_year').distinct()
-    semesters = models.Semesters.objects.filter(fk_department_id=faculty_department_id)
+    # Get batches for faculty's department
+    batches = models.Batches.objects.filter(fk_department_id=faculty_department_id)
+    
+    # Get all academic years and semesters for JavaScript filtering
+    all_academic_years = list(models.AcademicYears.objects.filter(
+        fk_batch_id__in=batches.values_list('batch_id', flat=True)
+    ).values('academic_id', 'academic_year', 'fk_batch_id'))
+    
+    all_semesters = list(models.Semesters.objects.filter(
+        fk_academic_id__in=models.AcademicYears.objects.filter(
+            fk_batch_id__in=batches.values_list('batch_id', flat=True)
+        ).values_list('academic_id', flat=True)
+    ).values('semester_id', 'semester_number', 'fk_academic_id'))
     
     students = None
-    selected_date = None
     selected_semester_obj = None
     
     if request.method == "POST":
+        batch_id = request.POST.get('batch')
         academic_year = request.POST.get('academic_year')
         semester_id = request.POST.get('semester')
         
-        # Get selected semester object for display
-        if semester_id:
-            selected_semester_obj = models.Semesters.objects.get(semester_id=semester_id)
-        
-        # Filter students by department, academic year, and semester (sorted alphabetically)
-        students = models.Users.objects.filter(
-            role='student',
-            fk_department_id=faculty_department_id,
-            fk_academic_id__in=models.AcademicYears.objects.filter(
-                academic_year=academic_year,
-                fk_department_id=faculty_department_id
-            ).values_list('academic_id', flat=True),
-            fk_semester_id=semester_id
-        ).order_by('full_name')
-        
-        # Handle attendance submission
-        if 'submit_attendance' in request.POST:
-            selected_date = request.POST.get('attendance_date')
-            duplicate_count = 0
+        if batch_id and academic_year and semester_id:
+            # Get selected semester object for display
+            try:
+                selected_semester_obj = models.Semesters.objects.get(semester_id=semester_id)
+            except models.Semesters.DoesNotExist:
+                selected_semester_obj = None
             
-            for student in students:
-                # Check if attendance already exists for this student on this date
-                existing_attendance = models.AttendanceRecords.objects.filter(
-                    fk_user_id=student.user_id,
-                    decision_date=selected_date
-                ).first()
+            # Get academic year object
+            try:
+                academic_obj = models.AcademicYears.objects.get(fk_batch_id=batch_id, academic_year=academic_year)
                 
-                if existing_attendance:
-                    duplicate_count += 1
-                else:
-                    attendance_status = request.POST.get(f'attendance_{student.user_id}')
-                    remarks = request.POST.get(f'remarks_{student.user_id}', '')
-                    
-                    # Create attendance record
-                    models.AttendanceRecords.objects.create(
-                        fk_user_id=student.user_id,
-                        fk_leave_id=0,  # 0 for daily attendance (not leave)
-                        decision=attendance_status,
-                        decision_date=selected_date,
-                        remarks=remarks
-                    )
-                    
-                    # Update attendance summary for this student
-                    update_attendance_summary(student.user_id, semester_id)
+                # Get selected batch object for display
+                selected_batch_obj = models.Batches.objects.get(batch_id=batch_id)
+            except models.AcademicYears.DoesNotExist:
+                academic_obj = None
+                selected_batch_obj = None
             
-            if duplicate_count > 0:
-                messages.warning(request, f'Attendance already exists for {duplicate_count} student(s) on {selected_date}. Only new records were saved.')
+            # Get subjects for selected batch and semester (using semester number)
+            subjects = models.Subjects.objects.filter(fk_batch_id=batch_id, fk_semester_id=semester_id)
+            
+            # Also try to get subjects by semester number if no subjects found
+            if not subjects.exists() and selected_semester_obj:
+                subjects = models.Subjects.objects.filter(
+                    fk_batch_id=batch_id, 
+                    fk_semester_id__in=models.Semesters.objects.filter(
+                        semester_number=selected_semester_obj.semester_number
+                    ).values_list('semester_id', flat=True)
+                )
+            
+            # Get hours from timetable for this faculty, batch, and semester
+            faculty_id = faculty.user_id
+            timetable_entries = models.Timetable.objects.filter(
+                fk_faculty_id=faculty_id,
+                fk_batch_id=batch_id,
+                fk_semester_id=semester_id
+            ).values_list('hours', flat=True).distinct()
+            hours = sorted(timetable_entries)
+            
+            # Debug: Check if hours are found
+            if not hours:
+                # If no hours in timetable, provide default options
+                hours = [1, 2, 3, 4, 5, 6, 7, 8]
+            
+            # Filter students
+            if academic_obj:
+                students = models.Users.objects.filter(
+                    role='student',
+                    fk_batch_id=batch_id,
+                    fk_academic_id=academic_obj.academic_id,
+                    fk_semester_id=semester_id
+                ).order_by('full_name')
             else:
-                messages.success(request, 'Attendance marked successfully!')
-            return redirect('mark_attendance')
+                students = models.Users.objects.none()
+            
+            # Handle attendance submission
+            if 'submit_attendance' in request.POST:
+                selected_date = request.POST.get('attendance_date')
+                selected_subject = request.POST.get('subject')
+                selected_hours = request.POST.get('hours')
+                
+                # Validate required fields
+                if not selected_subject or not selected_hours or not selected_date:
+                    messages.error(request, 'Please select subject, hours, and date before submitting attendance.')
+                    return redirect('mark_attendance')
+                
+                duplicate_count = 0
+                
+                for student in students:
+                    existing_attendance = models.AttendanceRecords.objects.filter(
+                        fk_user_id=student.user_id,
+                        decision_date=selected_date
+                    ).first()
+                    
+                    if existing_attendance:
+                        duplicate_count += 1
+                    else:
+                        attendance_status = request.POST.get(f'attendance_{student.user_id}')
+                        remarks = request.POST.get(f'remarks_{student.user_id}', '')
+                        
+                        models.AttendanceRecords.objects.create(
+                            fk_user_id=student.user_id,
+                            fk_batch_id=batch_id,
+                            fk_academic_id=academic_obj.academic_id,
+                            fk_semester_id=semester_id,
+                            fk_subject_id=int(selected_subject),
+                            fk_leave_id=0,
+                            decision=attendance_status,
+                            decision_date=selected_date,
+                            hours=int(selected_hours),
+                            remarks=remarks
+                        )
+                        
+                        update_attendance_summary(student.user_id, semester_id)
+
+                if duplicate_count > 0:
+                    messages.warning(request, f'Attendance already exists for {duplicate_count} student(s) on {selected_date}. Only new records were saved.')
+                else:
+                    messages.success(request, 'Attendance marked successfully!')
+                return redirect('mark_attendance')
+    else:
+        students = None
+        selected_semester_obj = None
+        selected_batch_obj = None
+        subjects = []
+        hours = []
+    
+    # Convert data to JSON for JavaScript
+    import json
+    academic_years_data = json.dumps(all_academic_years)
+    semesters_data = json.dumps(all_semesters)
     
     context = {
         'students': students,
-        'academic_years': academic_years,
-        'semesters': semesters,
-        'selected_date': selected_date,
-        'faculty_department_id': faculty_department_id,
+        'batches': batches,
+        'academic_years_data': academic_years_data,
+        'semesters_data': semesters_data,
+        'subjects': subjects,
+        'hours': hours,
         'faculty_department': faculty_department,
-        'selected_semester_obj': selected_semester_obj
+        'selected_semester_obj': selected_semester_obj,
+        'selected_batch': selected_batch_obj
     }
     return render(request, 'faculty/mark_attendance.html', context)
 
@@ -265,18 +337,38 @@ def show_attendance(request):
     faculty_department_id = faculty.fk_department_id
     faculty_department = models.Departments.objects.get(department_id=faculty_department_id)
     
-    # Get data for dropdowns
-    academic_years = models.AcademicYears.objects.filter(fk_department_id=faculty_department_id).values('academic_year').distinct()
-    semesters = models.Semesters.objects.filter(fk_department_id=faculty_department_id)
+    # Get batches for faculty's department
+    batches = models.Batches.objects.filter(fk_department_id=faculty_department_id)
+    
+    # Get all academic years and semesters for JavaScript filtering
+    all_academic_years = list(models.AcademicYears.objects.filter(
+        fk_batch_id__in=batches.values_list('batch_id', flat=True)
+    ).values('academic_id', 'academic_year', 'fk_batch_id'))
+    
+    all_semesters = list(models.Semesters.objects.filter(
+        fk_academic_id__in=models.AcademicYears.objects.filter(
+            fk_batch_id__in=batches.values_list('batch_id', flat=True)
+        ).values_list('academic_id', flat=True)
+    ).values('semester_id', 'semester_number', 'fk_academic_id'))
     
     attendance_records = None
     selected_date = None
     selected_semester_obj = None
+    selected_batch_obj = None
     
     if request.method == "POST":
+        batch_id = request.POST.get('batch')
         academic_year = request.POST.get('academic_year')
         semester_id = request.POST.get('semester')
         selected_date = request.POST.get('attendance_date')
+        
+        # Get selected batch object for display
+        selected_batch_obj = None
+        if batch_id:
+            try:
+                selected_batch_obj = models.Batches.objects.get(batch_id=batch_id)
+            except models.Batches.DoesNotExist:
+                selected_batch_obj = None
         
         # Get selected semester object for display
         if semester_id:
@@ -285,10 +377,9 @@ def show_attendance(request):
         # Get students matching the criteria
         students = models.Users.objects.filter(
             role='student',
-            fk_department_id=faculty_department_id,
+            fk_batch_id=batch_id,
             fk_academic_id__in=models.AcademicYears.objects.filter(
-                academic_year=academic_year,
-                fk_department_id=faculty_department_id
+                fk_batch_id=batch_id, academic_year=academic_year
             ).values_list('academic_id', flat=True),
             fk_semester_id=semester_id
         ).order_by('full_name')
@@ -307,13 +398,20 @@ def show_attendance(request):
                 'attendance_id': attendance.attendance_id if attendance else None
             })
     
+    # Convert data to JSON for JavaScript
+    import json
+    academic_years_data = json.dumps(all_academic_years)
+    semesters_data = json.dumps(all_semesters)
+    
     context = {
         'attendance_records': attendance_records,
-        'academic_years': academic_years,
-        'semesters': semesters,
+        'batches': batches,
+        'academic_years_data': academic_years_data,
+        'semesters_data': semesters_data,
         'selected_date': selected_date,
         'faculty_department': faculty_department,
-        'selected_semester_obj': selected_semester_obj
+        'selected_semester_obj': selected_semester_obj,
+        'selected_batch': selected_batch_obj
     }
     return render(request, 'faculty/show_attendance.html', context)
 
@@ -335,7 +433,6 @@ def edit_attendance(request, attendance_id):
 
 def update_attendance_summary(student_id, semester_id):
     attendance_records = models.AttendanceRecords.objects.filter(fk_user_id=student_id,fk_leave_id=0)
-    
     student = models.Users.objects.get(user_id=student_id)
     semester = models.Semesters.objects.get(semester_id=semester_id)
     total_classes = attendance_records.count()
@@ -346,19 +443,106 @@ def update_attendance_summary(student_id, semester_id):
     else:
         percentage = 0.0
     
-    summary = models.AttendanceSummary.objects.filter(fk_student_id=student_id).first()
+    summary = models.AttendanceSummary.objects.filter(fk_student_id=student_id, fk_semester_id=semester_id).first()
     if summary:
         # Update existing record
         summary.total_classes = total_classes
         summary.attended_classes = attended_classes
         summary.total_percentage = percentage
+        summary.fk_semester_id = semester_id
         summary.save()
     else:
         # Create new record
         summary = models.AttendanceSummary(
             fk_student_id=student_id,
+            fk_semester_id=semester_id,
             total_classes=total_classes,
             attended_classes=attended_classes,
             total_percentage=percentage
         )
         summary.save()
+
+def faculty_timetable(request):
+    username = request.session['email']
+    faculty = models.Users.objects.get(email=username)
+    faculty_department_id = faculty.fk_department_id
+    faculty_id = faculty.user_id
+    
+    # Get timetable entries only for this specific faculty
+    timetable_entries = models.Timetable.objects.filter(
+        fk_department_id=faculty_department_id,
+        fk_faculty_id=faculty_id
+    )
+    
+    # Get unique days and hours from faculty's timetable
+    days_with_data = set()
+    hours_with_data = set()
+    for entry in timetable_entries:
+        if entry.day_of_week:
+            days_with_data.add(entry.day_of_week)
+        if entry.hours:
+            hours_with_data.add(entry.hours)
+    
+    # Sort days and hours
+    day_order = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
+    days_of_week = [day for day in day_order if day in days_with_data]
+    hours = sorted(hours_with_data)
+    
+    # Fallback if no data
+    if not days_of_week:
+        days_of_week = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
+    if not hours:
+        hours = range(1, 8)
+    
+    # Build timetable grid
+    timetable_grid = {}
+    for day in days_of_week:
+        timetable_grid[day] = {}
+        for hour in hours:
+            timetable_grid[day][hour] = None
+    
+    # Fill grid with faculty's timetable data
+    for entry in timetable_entries:
+        try:
+            subject = models.Subjects.objects.get(subject_id=entry.fk_subject_id)
+            batch = models.Batches.objects.get(batch_id=entry.fk_batch_id)
+            semester = models.Semesters.objects.get(semester_id=entry.fk_semester_id)
+            
+            if entry.day_of_week in timetable_grid and entry.hours in timetable_grid[entry.day_of_week]:
+                timetable_grid[entry.day_of_week][entry.hours] = {
+                    'subject': subject,
+                    'batch': batch,
+                    'semester': semester
+                }
+        except (models.Subjects.DoesNotExist, models.Batches.DoesNotExist, models.Semesters.DoesNotExist):
+            continue
+    
+    # Create flat list for template
+    timetable_flat = []
+    for day in days_of_week:
+        row_data = {'day': day, 'hours': []}
+        for hour in hours:
+            cell_data = timetable_grid[day][hour]
+            if cell_data:
+                row_data['hours'].append({
+                    'hour': hour,
+                    'subject': cell_data['subject'].subject_name,
+                    'batch': cell_data['batch'].batch_name,
+                    'semester': f"Sem {cell_data['semester'].semester_number}"
+                })
+            else:
+                row_data['hours'].append({
+                    'hour': hour,
+                    'subject': None,
+                    'batch': None,
+                    'semester': None
+                })
+        timetable_flat.append(row_data)
+    
+    context = {
+        'timetable_flat': timetable_flat,
+        'hours': hours,
+        'has_data': timetable_entries.exists()
+    }
+    
+    return render(request, 'faculty/faculty_timetable.html', context)
