@@ -753,4 +753,117 @@ def delete_student(request, user_id):
     return render(request, 'hod/faculty_students.html', context)
 
 def update_semester(request):
-    return render(request,'hod/update_semester.html')
+    username = request.session['email']
+    hod = models.Users.objects.get(email=username)
+    hod_department_id = hod.fk_department_id
+    
+    # Get base data for dropdowns
+    batches = models.Batches.objects.filter(fk_department_id=hod_department_id)
+    academic_years = models.AcademicYears.objects.filter(fk_batch_id__in=batches.values_list('batch_id', flat=True))
+    semesters = models.Semesters.objects.filter(
+        fk_academic_id__in=academic_years.values_list('academic_id', flat=True)
+    ).order_by('fk_academic_id', 'semester_number')
+    
+    students = None
+    current_semester = None
+    selected_batch = ''
+    selected_academic = ''
+    selected_semester = ''
+    available_semesters = []
+    selected_batch_obj = None
+    selected_academic_obj = None
+    
+    if request.method == 'POST':
+        action = request.POST.get('action', 'filter')
+        batch_id = request.POST.get('batch')
+        academic_id = request.POST.get('academic_year')
+        semester_id = request.POST.get('semester')
+        new_semester_id = request.POST.get('new_semester')
+        
+        # Handle update operation
+        if action == 'update' and new_semester_id:
+            try:
+                # Get all students matching the criteria
+                students_to_update = models.Users.objects.filter(
+                    role='student',
+                    fk_department_id=hod_department_id,
+                    fk_batch_id=batch_id,
+                    fk_academic_id=academic_id,
+                    fk_semester_id=semester_id
+                )
+                
+                # Update all students to new semester
+                updated_count = students_to_update.update(fk_semester_id=new_semester_id)
+                
+                messages.success(request, f'Successfully updated semester for {updated_count} students!')
+                
+                # Show students in their NEW semester after update
+                students = models.Users.objects.filter(
+                    role='student',
+                    fk_department_id=hod_department_id,
+                    fk_batch_id=batch_id,
+                    fk_academic_id=academic_id,
+                    fk_semester_id=new_semester_id
+                ).order_by('full_name')
+                
+                # Update display variables
+                current_semester = models.Semesters.objects.get(semester_id=new_semester_id)
+                selected_batch = batch_id
+                selected_academic = academic_id
+                selected_semester = new_semester_id
+                
+                # Get batch and academic year objects for display
+                selected_batch_obj = models.Batches.objects.get(batch_id=batch_id)
+                selected_academic_obj = models.AcademicYears.objects.get(academic_id=academic_id)
+                
+                # Get available semesters for the same academic year only
+                available_semesters = models.Semesters.objects.filter(
+                    fk_academic_id=academic_id
+                ).order_by('semester_number')
+                
+            except Exception as e:
+                messages.error(request, f'Error updating students: {str(e)}')
+        
+        # Handle show students operation
+        elif batch_id and academic_id and semester_id:
+            students = models.Users.objects.filter(
+                role='student',
+                fk_department_id=hod_department_id,
+                fk_batch_id=batch_id,
+                fk_academic_id=academic_id,
+                fk_semester_id=semester_id
+            ).order_by('full_name')
+            
+            if students.exists():
+                current_semester = models.Semesters.objects.get(semester_id=semester_id)
+                selected_batch = batch_id
+                selected_academic = academic_id
+                selected_semester = semester_id
+                
+                # Get batch and academic year objects for display
+                selected_batch_obj = models.Batches.objects.get(batch_id=batch_id)
+                selected_academic_obj = models.AcademicYears.objects.get(academic_id=academic_id)
+                
+                # Get available semesters for the same academic year only
+                available_semesters = models.Semesters.objects.filter(
+                    fk_academic_id=academic_id
+                ).order_by('semester_number')
+            else:
+                messages.warning(request, 'No students found matching the selected criteria.')
+                selected_batch_obj = None
+                selected_academic_obj = None
+    
+    context = {
+        'batches': batches,
+        'academic_years': academic_years,
+        'semesters': semesters,
+        'students': students,
+        'current_semester': current_semester,
+        'selected_batch': selected_batch,
+        'selected_academic': selected_academic,
+        'selected_semester': selected_semester,
+        'selected_batch_obj': selected_batch_obj,
+        'selected_academic_obj': selected_academic_obj,
+        'available_semesters': available_semesters
+    }
+    return render(request,'hod/update_semester.html', context)
