@@ -867,3 +867,88 @@ def update_semester(request):
         'available_semesters': available_semesters
     }
     return render(request,'hod/update_semester.html', context)
+
+def stud_leave_request(request):
+    if 'email' not in request.session or request.session.get('usertype') != 'hod':
+        return redirect('login')
+    
+    hod = models.Users.objects.get(email=request.session['email'])
+    hod_department_id = hod.fk_department_id
+    
+    # Get all leave requests for HOD's department that are forwarded or processed
+    forwarded_leaves = models.LeaveRequests.objects.filter(
+        fk_user_id__in=models.Users.objects.filter(
+            fk_department_id=hod_department_id
+        ).values_list('user_id', flat=True),
+        status__in=['Forwarded to HOD', 'Approved', 'Rejected']
+    ).order_by('-applied_on')
+    
+    data = []
+    for leave in forwarded_leaves:
+        try:
+            # Get student info
+            student = models.Users.objects.get(user_id=leave.fk_user_id)
+            
+            # Get AI analysis if exists
+            ai_analysis = models.LeaveAiAnalysis.objects.filter(fk_leave_id=leave.leave_id).first()
+            
+            # Calculate attendance percentage
+            attendance_records = models.AttendanceSummary.objects.filter(
+                fk_student_id=leave.fk_user_id
+            ).order_by('-fk_semester_id').first()
+            
+            attendance_percentage = attendance_records.total_percentage if attendance_records else 0
+            
+            # Get batch and semester info
+            batch = models.Batches.objects.filter(batch_id=student.fk_batch_id).first()
+            semester = models.Semesters.objects.filter(semester_id=student.fk_semester_id).first()
+            
+            data.append({
+                'leave': leave,
+                'user': student,
+                'batch': batch,
+                'semester': semester,
+                'attendance_percentage': attendance_percentage,
+                'ai_analysis': ai_analysis
+            })
+            
+        except models.Users.DoesNotExist:
+            continue
+    
+    return render(request, 'hod/stud_leave_request.html', {'data': data})
+
+def approve_leave(request, leave_id):
+    if 'email' not in request.session or request.session.get('usertype') != 'hod':
+        return redirect('login')
+    
+    try:
+        # Update leave status to approved
+        models.LeaveRequests.objects.filter(leave_id=leave_id).update(
+            status='Approved'
+        )
+        
+        from django.contrib import messages
+        messages.success(request, 'Leave request approved successfully')
+        
+    except Exception as e:
+        messages.error(request, f'Error approving leave: {str(e)}')
+    
+    return redirect('stud_leave_request')
+
+def reject_leave(request, leave_id):
+    if 'email' not in request.session or request.session.get('usertype') != 'hod':
+        return redirect('login')
+    
+    try:
+        # Update leave status to rejected
+        models.LeaveRequests.objects.filter(leave_id=leave_id).update(
+            status='Rejected'
+        )
+        
+        from django.contrib import messages
+        messages.success(request, 'Leave request rejected successfully')
+        
+    except Exception as e:
+        messages.error(request, f'Error rejecting leave: {str(e)}')
+    
+    return redirect('stud_leave_request')

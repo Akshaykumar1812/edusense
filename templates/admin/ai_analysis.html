@@ -28,7 +28,7 @@
                                     <strong>Attendance Percentage:</strong>
                                 </div>
                                 <div class="col-md-6">
-                                    <span class="badge bg-success">85%</span>
+                                    <span class="badge bg-success">{{ analysis.attendance_percentage }}%</span>
                                 </div>
                             </div>
                             <div class="row mb-2">
@@ -36,7 +36,7 @@
                                     <strong>Past Leave Count:</strong>
                                 </div>
                                 <div class="col-md-6">
-                                    <span class="badge bg-info">4</span>
+                                    <span class="badge bg-info">{{ analysis.past_leave_count }}</span>
                                 </div>
                             </div>
 
@@ -45,31 +45,42 @@
                                     <strong>Sentiment Score:</strong>
                                 </div>
                                 <div class="col-md-6">
-                                    <span class="badge bg-warning text-dark">Neutral</span>
+                                    {% if analysis.sentiment_score > 0.1 %}
+                                        <span class="badge bg-success">Positive ({{ analysis.sentiment_score }})</span>
+                                    {% elif analysis.sentiment_score < -0.1 %}
+                                        <span class="badge bg-danger">Negative ({{ analysis.sentiment_score }})</span>
+                                    {% else %}
+                                        <span class="badge bg-warning text-dark">Neutral ({{ analysis.sentiment_score }})</span>
+                                    {% endif %}
                                 </div>
                             </div>
-                            
 
                             <div class="row mb-3">
                                 <div class="col-md-6">
                                     <strong>Academic Risk:</strong>
                                 </div>
                                 <div class="col-md-6">
-                                    <span class="badge bg-danger">Low</span>
+                                    {% if analysis.academic_risk_level == 'Safe' %}
+                                        <span class="badge bg-success">{{ analysis.academic_risk_level }}</span>
+                                    {% elif analysis.academic_risk_level == 'Warning' %}
+                                        <span class="badge bg-warning text-dark">{{ analysis.academic_risk_level }}</span>
+                                    {% else %}
+                                        <span class="badge bg-danger">{{ analysis.academic_risk_level }}</span>
+                                    {% endif %}
                                 </div>
                             </div>
                             <hr>
 
                             <div class="col-md-6">
                                     <strong>AI Recommendation : </strong>
-                                    <span class="text-primary"></span>
+                                    <span class="text-primary">{{ analysis.recommendation }}</span>
                                 </div>
 
                             <div class="mb-3">
                                 <strong>Approval Availability :</strong>
-                                <span class="badge bg-success"></span>
+                                <span class="badge bg-success">{{ analysis.approval_probability|floatformat:2 }}%</span>
                             </div>
-                            <a href="{% url 'reason' leave.leave_id %}" class="btn btn-primary me-2 ">Proceed To Decision</a>
+                            <a href="{% url 'forward_to_hod' leave.leave_id %}" class="btn btn-primary me-2 ">Forward To HOD</a>
                             <a href="{% url 'leave_request' %}" class="btn btn-danger me-2 ">Back</a>
                         </div>
                     </div>

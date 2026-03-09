@@ -26,4 +26,9 @@ urlpatterns = [
     path('delete_student/<int:user_id>/',views.delete_student,name="delete_student"),
 
     path('update_semester/',views.update_semester,name="update_semester"),
+
+    path('stud_leave_request/',views.stud_leave_request,name="stud_leave_request"),
+    path('approve_leave/<int:leave_id>/',views.approve_leave,name="approve_leave"),
+    path('reject_leave/<int:leave_id>/',views.reject_leave,name="reject_leave"),
+    
 ]

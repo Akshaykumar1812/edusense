@@ -15,6 +15,7 @@ urlpatterns = [
     path('leave_request/',views.leave_request,name="leave_request"),
     path('delete_leave/<int:leave_id>/', views.delete_leave, name='delete_leave'),
     path('ai_analysis/<int:leave_id>/', views.ai_analysis, name='ai_analysis'),
+    path('forward_to_hod/<int:leave_id>/', views.forward_to_hod, name='forward_to_hod'),
     path('reason/<int:leave_id>/', views.reason, name="reason"),
     path('semester/',views.semester,name="semester"),
     path('add_semester/',views.add_semester,name="add_semester"),

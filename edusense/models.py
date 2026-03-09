@@ -49,6 +49,21 @@ class AttendanceSummary(models.Model):
         db_table = 'attendance_summary'
 
 
+class Attendancewarningreport(models.Model):
+    rep_id = models.AutoField(primary_key=True)
+    fk_student_id = models.IntegerField()
+    attendance_percentage = models.FloatField()
+    status = models.CharField(max_length=20)
+    generated_on = models.DateField()
+    is_sent = models.IntegerField()
+    generated_by = models.IntegerField()
+    fk_semester_id = models.IntegerField()
+
+    class Meta:
+        managed = False
+        db_table = 'attendancewarningreport'
+
+
 class AuthGroup(models.Model):
     name = models.CharField(unique=True, max_length=150)
 
@@ -199,9 +214,10 @@ class LeaveAiAnalysis(models.Model):
     fk_leave_id = models.IntegerField()
     attendance_percentage = models.DecimalField(max_digits=5, decimal_places=2)
     past_leave_count = models.IntegerField()
+    warning_count = models.IntegerField()
     sentiment_score = models.DecimalField(max_digits=5, decimal_places=2)
     academic_risk_level = models.CharField(max_length=20)
-    approve_probabilty = models.DecimalField(max_digits=5, decimal_places=2)
+    approval_probability = models.DecimalField(max_digits=5, decimal_places=2)
     recommendation = models.CharField(max_length=50)
     analyzed_on = models.DateField()
 

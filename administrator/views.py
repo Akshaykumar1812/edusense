@@ -88,14 +88,143 @@ def delete_leave(request, leave_id):
     leave.delete()
     return redirect('leave_request')
 
+#----AI Part-----#
+
+def sentiment_analysis(reason):
+
+    positive = ["medical", "hospital", "emergency", "health", "sick", "doctor"]
+    negative = ["trip", "vacation", "movie", "outing", "tour"]
+
+    score = 0
+    reason_lower = reason.lower()
+
+    for word in positive:
+        if word in reason_lower:
+            score += 1
+
+    for word in negative:
+        if word in reason_lower:
+            score -= 1
+
+    return score
+
+def calculate_leave_probability(attendance, leave_count, warning_count, sentiment_score, is_exam_week):
+
+    score = 0
+
+    # Attendance contribution
+    score += float(attendance) * 0.4
+
+    # Leave penalty
+    score -= leave_count * 5
+
+    # Warning penalty
+    score -= warning_count * 10
+
+    # Sentiment bonus
+    score += sentiment_score * 20
+
+    # Exam week penalty
+    if is_exam_week:
+        score -= 15
+
+    # Normalize score
+    score = max(0, min(score, 100))
+
+    return score
+
 def ai_analysis(request,leave_id):
-    leave = models.LeaveRequests.objects.get(leave_id=leave_id)
+    if 'email' not in request.session or request.session.get('usertype') != 'admin':
+        return redirect('login')
+
+    try:
+        leave = models.LeaveRequests.objects.get(leave_id=leave_id)
+    except models.LeaveRequests.DoesNotExist:
+        return redirect('leave_request')
+    if leave.status not in ["Pending", "Forwarded to HOD"]:
+        return redirect('leave_request')
+
     try:
         user = models.Users.objects.get(user_id=leave.fk_user_id)
-        return render(request,'admin/ai_analysis.html',{'leave':leave,'user':user})
+        # 1. Fetch Student-Specific Parameters (STRICT FILTERING)
+        summary = models.AttendanceSummary.objects.filter(fk_student_id=user.user_id).first()
+        attendance = summary.total_percentage if summary else 0.0
+
+        student_id = leave.fk_user_id
+        past_leave_count = models.LeaveRequests.objects.filter(fk_user_id=student_id).exclude(
+            leave_id=leave.leave_id
+        ).count()
+
+        # DEBUG VALIDATION
+        print("Analyzing Leave ID:", leave.leave_id)
+        print("Student ID:", student_id)
+        print("Past Leave Count:", past_leave_count)
+
+        warning_count = models.Attendancewarningreport.objects.filter(fk_student_id=user.user_id).count()
+
+        # Simple NLP Sentiment
+        sentiment_score = sentiment_analysis(leave.reason)
+
+        # Academic Calendar Mock (Could be improved with a model)
+        is_exam_week = False 
+
+        # 2. Hybrid Model Execution
+        probability = calculate_leave_probability(
+            attendance, past_leave_count, warning_count, sentiment_score, is_exam_week
+        )
+
+        # 3. Decision Mapping
+        if probability >= 75:
+            recommendation = "Approve"
+        elif probability >= 50:
+            recommendation = "Review"
+        else:
+            recommendation = "High Risk"
+
+        # Risk level based on attendance (for storage)
+        risk_level = "Safe"
+        if attendance < 50: risk_level = "Critical"
+        elif attendance < 75: risk_level = "Warning"
+
+        # 4. Save/Update AI Analysis (Duplicate Prevention)
+        models.LeaveAiAnalysis.objects.filter(fk_leave_id=leave.leave_id).delete()
+
+        analysis = models.LeaveAiAnalysis.objects.create(
+            fk_leave_id=leave.leave_id,
+            attendance_percentage=attendance,
+            past_leave_count=past_leave_count,
+            warning_count=warning_count,
+            sentiment_score=sentiment_score,
+            academic_risk_level=risk_level,
+            approval_probability=probability,
+            recommendation=recommendation,
+            analyzed_on=datetime.now().date()
+        )
+
+        context = {
+            'leave': leave,
+            'user': user,
+            'analysis': analysis,
+            'probability': int(probability)
+        }
+        return render(request, 'admin/ai_analysis.html', context)
+    
     except models.Users.DoesNotExist:
-        # Handle case where user doesn't exist
-        return render(request,'admin/ai_analysis.html',{'leave':leave,'user':None})
+        return redirect('leave_request')
+
+
+def forward_to_hod(request, leave_id):
+    if 'email' not in request.session or request.session.get('usertype') != 'admin':
+        return redirect('login')
+        
+    models.LeaveRequests.objects.filter(leave_id=leave_id).update(
+        status="Forwarded to HOD"
+    )
+    from django.contrib import messages
+    messages.success(request, "Leave request forwarded to HOD successfully")
+    return redirect('leave_request')
+
+
 
 def reason(request, leave_id):
     leave = models.LeaveRequests.objects.get(leave_id=leave_id)

@@ -34,13 +34,15 @@
                                             <td>{{ i.reason }}</td>
                                             <td>
                                                 {% if i.status == "Pending" %}
-                                                <button class="btn btn-warning me-2">{{ i.status }}</button>
-                                                {% elif i.status == "Approve" %}
-                                                <button class="btn btn-success me-2">{{ i.status }}</button>
-                                                {% elif i.status == "Reject" %}
-                                                <button class="btn btn-danger me-2">{{ i.status }}</button>
+                                                <span class="badge bg-warning">{{ i.status }}</span>
+                                                {% elif i.status == "Approved" %}
+                                                <span class="badge bg-success">{{ i.status }}</span>
+                                                {% elif i.status == "Rejected" %}
+                                                <span class="badge bg-danger">{{ i.status }}</span>
+                                                {% elif i.status == "Forwarded to HOD" %}
+                                                <span class="badge bg-info">{{ i.status }}</span>
                                                 {% else %}
-                                                <button class="btn btn-secondary me-2">{{ i.status }}</button>
+                                                <span class="badge bg-secondary">{{ i.status }}</span>
                                                 {% endif %}
                                             </td>
                                         </tr>
