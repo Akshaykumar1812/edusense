@@ -370,22 +370,23 @@ footer a {
     transform: translateY(0);
 }
 
-.forgot-password-container .back-link {
-    margin-top: 30px;
-    text-align: center;
-}
+        .forgot-password-container .back-link {
+            margin-top: 30px;
+            text-align: center;
+        }
 
-.forgot-password-container .back-link a {
-    color: #4651ec;
-    text-decoration: none;
-    font-weight: 500;
-    transition: all 0.3s ease;
-}
+        .forgot-password-container .back-link a {
+            color: #4651ec;
+            text-decoration: none;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
 
-.forgot-password-container .back-link a:hover {
-    color: #3a45d6;
-    text-decoration: underline;
-}
+        .forgot-password-container .back-link a:hover {
+            color: #3a45d6;
+            text-decoration: underline;
+        }
+
 
 
 /* Icon styles */

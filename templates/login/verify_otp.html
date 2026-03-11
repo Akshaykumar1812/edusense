@@ -9,18 +9,22 @@
     <div class="icon"></div>
     
     <h2>Verify OTP</h2>
-    <p class="subtitle">Enter your email address and we'll send you an OTP to reset your password.</p>
+    <p class="subtitle">Enter the 4-digit OTP sent to your email address.</p>
     
     <form method="POST">
         {% csrf_token %}
         
         <div class="form-group">
-            <label for="email">Enter Your OTP</label>
-            <input type="email" name="email" placeholder="Enter your email address" required>
+            <label for="otp">Enter OTP</label>
+            <input type="text" name="otp" placeholder="Enter 4-digit OTP" maxlength="4" pattern="[0-9]{4}" required>
         </div>
         
-        <button type="submit">Verify</button>
+        <button type="submit">Verify OTP</button>
     </form>
+    
+    <div class="back-link">
+        <a href="{% url 'forgot_password' %}">← Back to Forgot Password</a>
+    </div>
 </div>
 
 </body>
