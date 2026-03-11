@@ -4,6 +4,9 @@ from django.contrib import messages
 from django.shortcuts import redirect, render
 from edusense import models
 import re
+import random
+from django.core.mail import send_mail
+from edusense.settings import EMAIL_HOST_USER
 
 from django.contrib.sessions.models import Session
 
@@ -117,7 +120,64 @@ def register(request):
         'semesters': semesters
     })
 
+def forgot_password(request):
+    if request.method == 'POST':
+        email = request.POST.get('email', '')
+        if email:
+            log_info = models.Login.objects.filter(username=email)
+            for info in log_info:
+                if info.username == email:
+                    otp = str(random.randint(1000, 9999))
+                    request.session['otp'] = otp
+                    request.session['otpemail'] = info.username
+                    subject = 'PASSWORD RESETTING FOR EDUSENSE'
+                    message = "Your OTP is:" + otp
+                    email_id = request.session['otpemail']
+                    send_mail(subject, message, EMAIL_HOST_USER, [email_id])
+                    messages.success(request, 'OTP has been sent to your email address.')
+                    return redirect('verify_otp')
+            else:
+                messages.error(request, 'Email address not found.')
+        else:
+            messages.error(request, 'Please enter your email address.')
+    
+    return render(request, 'login/forgot_password.html')
 
+def verify_otp(request):
+    if request.method == 'POST':
+        entered_otp = request.POST.get('otp', '')
+        stored_otp = request.session.get('otp')
+        otpemail = request.session.get('otpemail')
+        if stored_otp and entered_otp == stored_otp:
+            request.session['otp_verified'] = True
+            request.session['verified_email'] = otpemail
+            messages.success(request, 'OTP verified successfully. Please set your new password.')
+            return redirect('reset_password')
+        else:
+            messages.error(request, 'Invalid OTP. Please try again.')
+    else:
+        messages.error(request, 'Please enter the OTP sent to your email address.')
+    
+    return render(request, 'login/verify_otp.html')
+
+def reset_password(request):
+    if request.method == 'POST':
+        new_password = request.POST.get('new_password', '')
+        confirm_password = request.POST.get('confirm_password', '')
+        
+        if new_password and confirm_password:
+            if new_password == confirm_password:
+
+                log = models.Login.objects.filter(username=request.session.get('verified_email'))
+                log.update(password=new_password)
+                messages.success(request, 'Password has been reset successfully.')
+                return redirect('login')
+            else:
+                messages.error(request, 'Passwords do not match.')
+        else:
+            messages.error(request, 'Please fill in all fields.')
+    
+    return render(request, 'login/reset_password.html')
 
 
 
